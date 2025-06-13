@@ -13,10 +13,11 @@ byte_order = "<" if sys.byteorder == "little" else ">"
 
 p = 6
 ad = 2
-n = 10
+n = 100
 
 
 g = ds.er_dag(p, ad=ad)
+print(g)
 _, B, O = ds.corr(g)
 X = ds.simulate(B, O, n).astype(np.float32)
 

@@ -1,21 +1,31 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <time.h>
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
+#define BOSS_IMPLEMENTATION
 
+#ifndef BOSS_H_
+#include "boss.h"
+#endif // BOSS_H_
+
+
+// MOVE THIS SOMEWHERE ELSE
 typedef struct {
   uint32_t i;
   uint32_t j;
   uint32_t edge;
 } Edge;
 
+// MOVE THIS SOMEWHERE ELSE
 typedef struct {
   uint32_t num_edges;
   Edge *edges;
 } EdgeList;
 
+// MOVE THIS SOMEWHERE ELSE
 typedef struct {
   uint32_t num_groups;
   uint32_t *group_sizes;
@@ -29,11 +39,18 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
   Py_buffer cov_view;
   Py_buffer knwl_view;
 
-  static char *kwlist[] = {"cov", "knwl", NULL};
+  float lambda = 1.0;
+  uint32_t restarts = 1;
+  uint32_t seed = 0;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kw, "y*y*", kwlist, &cov_view, &knwl_view)) {
+  static char *kwlist[] = {"cov", "knowledge", "lambda", "restarts", "seed", NULL};
+
+  if (!PyArg_ParseTupleAndKeywords(args, kw, "y*y*|fII", kwlist, &cov_view, &knwl_view, &lambda, &restarts, &seed)) {
     return NULL;
   }
+
+  // PASS SEED HERE!
+  srand(time(NULL));
 
   void *itr;
   
@@ -68,26 +85,29 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
   itr += sizeof(uint32_t);
   knwl_graph.edges = (Edge *)itr;
 
-  // print the knwl groups
-  size_t offset = 0;
-  for (size_t i = 0; i < knwl.num_groups; i++) {
-    printf("Group %zu:", i);
-    for (size_t j = 0; j < knwl.group_sizes[i]; j++)
-      printf(" %u", knwl.group_members[offset + j]);
-    offset += knwl.group_sizes[i];
-    printf("\n");
-  }
 
-  // print forbidden knwl knwl_graph (on groups)
-  for (size_t i = 0; i < knwl_graph.num_edges; i++) {
-    if (knwl_graph.edges[i].edge == 1) {
-      printf("%zu. %u <-- %u\n", i, knwl_graph.edges[i].i, knwl_graph.edges[i].j);
-    } else if (knwl_graph.edges[i].edge == 2) {
-      printf("%zu. %u --> %u\n", i, knwl_graph.edges[i].i, knwl_graph.edges[i].j);
+  // TEMPORARY SOLUTION!
+  uint8_t *tmp = malloc(sizeof(uint8_t) * p * p);
+
+  // ADD KNOWLEDGE TO THIS CALL!
+  boss_search(cov, n, p, lambda, restarts, tmp);
+
+  EdgeList graph = {0};
+  graph.edges = malloc(sizeof(Edge) * p * p); // overkill for now
+
+  for (size_t i = 0; i < p; i++) {
+    for (size_t j = 0; j < p; j++) {
+      if (tmp[i * p + j] == 1) {
+        Edge edge = {i, j, 2};
+        graph.edges[graph.num_edges++] = edge;
+      }
     }
   }
 
-  PyObject *edges = PyBytes_FromStringAndSize((const char *)knwl_graph.edges, knwl_graph.num_edges * sizeof(Edge));
+  PyObject *edges = PyBytes_FromStringAndSize((const char *)graph.edges, graph.num_edges * sizeof(Edge));
+
+  free(tmp);
+  free(graph.edges);
 
   PyBuffer_Release(&cov_view);
   PyBuffer_Release(&knwl_view);
@@ -98,6 +118,10 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
 
 static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)
 {
+
+  printf("THIS IS NOT HOOKED UP TO BOSS YET\n");
+  printf("THE CURRENT OUTPUT IS FOR TESTING PURPOSES ONLY\n");
+
   Py_buffer data_view;
   Py_buffer knwl_view;
 
