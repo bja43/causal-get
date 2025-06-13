@@ -11,9 +11,9 @@ import causalget as cg
 byte_order = "<" if sys.byteorder == "little" else ">"
 
 
-p = 6
-ad = 2
-n = 100
+p = 21
+ad = 6
+n = 1000
 
 
 g = ds.er_dag(p, ad=ad)
@@ -42,19 +42,13 @@ group_members = [x for x in cols]
 
 # uint32 (in this example all groups have size 10)
 # group index i with have size equal to the ith member of this list
-group_sizes = [2 for i in range(num_groups)]
+group_sizes = [7 for i in range(num_groups)]
 
 # (uint32, uint32, uint32) -> (group a, group b, forbidden edge type)
 forbidden = []
 for i in range(num_groups):
   for j in range(i):
     forbidden += [i, j, 2]
-
-# the components of knowledge
-# print(num_groups)
-# print(group_sizes)
-# print(group_members)
-# print(forbidden)
 
 knwl_buf = struct.pack(byte_order + "I", num_groups)
 knwl_buf += struct.pack(byte_order + f"{num_groups}I", *group_sizes)
@@ -64,7 +58,7 @@ knwl_buf += struct.pack(byte_order + f"{len(forbidden)}I", *forbidden)
 
 
 if 1:
-  blob = cg.boss_from_cov(cov_buf, knwl_buf)
+  blob = cg.boss_from_cov(cov_buf, knwl_buf, discount=1.0, restarts=10)
 
   STRUCT_FMT = byte_order + "iii"
   STRUCT_SIZE = struct.calcsize(STRUCT_FMT)
@@ -73,11 +67,10 @@ if 1:
   print(edges)
 
   for i, j, e in edges:
-    if e == 1: print(i, "<--", j)
-    if e == 2: print(i, "-->", j)
+    if e == 1: print(i, "-->", j)
+    if e == 2: print(i, "<--", j)
 
-
-if 1:
+if 0:
   blob = cg.boss_from_data(data_buf, knwl_buf)
 
   STRUCT_FMT = byte_order + "iii"
@@ -87,5 +80,5 @@ if 1:
   print(edges)
 
   for i, j, e in edges:
-    if e == 1: print(i, "<--", j)
-    if e == 2: print(i, "-->", j)
+    if e == 1: print(i, "-->", j)
+    if e == 2: print(i, "<--", j)

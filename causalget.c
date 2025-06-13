@@ -39,15 +39,17 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
   Py_buffer cov_view;
   Py_buffer knwl_view;
 
-  float lambda = 1.0;
+  float discount = 1.0;
   uint32_t restarts = 1;
   uint32_t seed = 0;
 
-  static char *kwlist[] = {"cov", "knowledge", "lambda", "restarts", "seed", NULL};
+  static char *kwlist[] = {"cov", "knowledge", "discount", "restarts", "seed", NULL};
 
-  if (!PyArg_ParseTupleAndKeywords(args, kw, "y*y*|fII", kwlist, &cov_view, &knwl_view, &lambda, &restarts, &seed)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kw, "y*y*|fII", kwlist, &cov_view, &knwl_view, &discount, &restarts, &seed)) {
     return NULL;
   }
+
+  printf("discount: %f, restarts: %u, seed: %u\n", discount, restarts, seed);
 
   // PASS SEED HERE!
   srand(time(NULL));
@@ -90,15 +92,22 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
   uint8_t *tmp = malloc(sizeof(uint8_t) * p * p);
 
   // ADD KNOWLEDGE TO THIS CALL!
-  boss_search(cov, n, p, lambda, restarts, tmp);
+  boss_search(cov, n, p, discount, restarts, tmp);
 
   EdgeList graph = {0};
   graph.edges = malloc(sizeof(Edge) * p * p); // overkill for now
 
   for (size_t i = 0; i < p; i++) {
     for (size_t j = 0; j < p; j++) {
+      printf(" %hhu", tmp[i * p + j]);
+    }
+    printf("\n");
+  }
+
+  for (uint32_t i = 0; i < p; i++) {
+    for (uint32_t j = 0; j < p; j++) {
       if (tmp[i * p + j] == 1) {
-        Edge edge = {i, j, 2};
+        Edge edge = {j, i, 1};
         graph.edges[graph.num_edges++] = edge;
       }
     }
