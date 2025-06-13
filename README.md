@@ -1,5 +1,5 @@
-# cboss
-An implementation of the BOSS algorithm in C
+# CausalGET
+Causal Graph Estimation Toolbox
 
 How to build:
 ```
