@@ -58,7 +58,7 @@ knwl_buf += struct.pack(byte_order + f"{len(forbidden)}I", *forbidden)
 
 
 if 1:
-  blob = cg.boss_from_cov(cov_buf, knwl_buf, discount=1.0, restarts=10)
+  blob = cg.boss_from_cov(cov_buf, knwl_buf, discount=1.0, restarts=10, seed=32)
 
   STRUCT_FMT = byte_order + "iii"
   STRUCT_SIZE = struct.calcsize(STRUCT_FMT)

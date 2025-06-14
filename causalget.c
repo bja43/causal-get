@@ -51,8 +51,8 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
 
   printf("discount: %f, restarts: %u, seed: %u\n", discount, restarts, seed);
 
-  // PASS SEED HERE!
-  srand(time(NULL));
+  if (seed) srand(seed);
+  else srand(time(NULL));
 
   void *itr;
   
@@ -106,7 +106,7 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
 
   for (uint32_t i = 0; i < p; i++) {
     for (uint32_t j = 0; j < p; j++) {
-      if (tmp[i * p + j] == 1) {
+      if (tmp[i * p + j]) {
         Edge edge = {j, i, 1};
         graph.edges[graph.num_edges++] = edge;
       }
@@ -185,7 +185,7 @@ static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)
 
   // print forbidden knwl knwl_graph (on groups)
   for (size_t i = 0; i < knwl_graph.num_edges; i++) {
-    if (knwl_graph.edges[i].edge == 1) {
+    if (knwl_graph.edges[i].edge) {
       printf("%zu. %u <-- %u\n", i, knwl_graph.edges[i].i, knwl_graph.edges[i].j);
     } else if (knwl_graph.edges[i].edge == 2) {
       printf("%zu. %u --> %u\n", i, knwl_graph.edges[i].i, knwl_graph.edges[i].j);
