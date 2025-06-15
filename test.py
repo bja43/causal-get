@@ -2,24 +2,33 @@ import os
 # IF USING PYTHON >3.11 REQUIRED?
 os.environ['OMP_NUM_THREADS'] = '1'
 
+import sys
+import struct
+
 import numpy as np
 import pandas as pd
 import daosim as ds
+import causalget as cg
 
 from timeit import default_timer as timer
-
-from boss import boss
 
 import jpype
 import jpype.imports
 
-jpype.startJVM("-Xmx4g", jvmpath="/usr/lib/jvm/java-21-openjdk-amd64/lib/server/libjvm.so", classpath="tetrad-current.jar")
+# jpype.startJVM("-Xmx4g", jvmpath="/usr/lib/jvm/java-21-openjdk-amd64/lib/server/libjvm.so", classpath="tetrad-current.jar")
+jpype.startJVM("-Xmx4g", jvmpath="/opt/homebrew/opt/openjdk@23/libexec/openjdk.jdk/Contents/MacOS/libjli.dylib", classpath="tetrad-current.jar")
 
 import java.util as util
 import edu.cmu.tetrad.data as td
 import edu.cmu.tetrad.graph as tg
 import edu.cmu.tetrad.search as ts
 import edu.cmu.tetrad.algcomparison as ta
+
+
+# check endianess of the current machine
+byte_order = "<" if sys.byteorder == "little" else ">"
+STRUCT_FMT = byte_order + "iii"
+STRUCT_SIZE = struct.calcsize(STRUCT_FMT)
 
 
 def df_to_data(df):
@@ -66,8 +75,13 @@ def run_sim(n, p, ad, sf):
   R = np.corrcoef(X.T).astype(np.float32)
 
   df = pd.DataFrame(X, columns=[f'X{i}' for i in range(p)])
-
   data = df_to_data(df)
+
+  cov_buf = struct.pack(byte_order + "II", n, p)
+  cov_buf += R.astype(np.float32).tobytes() # float32
+  data_buf = struct.pack(byte_order + "II", n, p)
+  data_buf += X.astype(np.float32).T.tobytes() # float32 transposed
+  knwl_buf = struct.pack(byte_order + "III", 0, 0, 0)
 
   nodes = data.getVariables()
   cpdag = construct_graph(g, nodes)
@@ -76,10 +90,9 @@ def run_sim(n, p, ad, sf):
   graphs = []
   times = [timer()]
 
-  # SET IF TETRAD ALG WILL RUN AS COMPARISON
-  if 1:
 
-    algs.append("tetrad")
+  if 0:
+    algs.append("boss-tetrad")
 
     score = ts.score.SemBicScore(data, True)
     score.setPenaltyDiscount(2)
@@ -97,12 +110,35 @@ def run_sim(n, p, ad, sf):
     graphs.append(search.search())
     times.append(timer())
 
-  algs.append("c")
 
-  dag = boss(R, n, 2.0, 10)
-  # dag = boss(X.astype(np.float32).T, 2.0, 1)
-  graphs.append(construct_graph(dag, nodes))
-  times.append(timer())
+  if 1:
+    algs.append("boss-from-cov")
+
+    blob = cg.boss_from_cov(cov_buf, knwl_buf, 2.0, 10) 
+    edges = [struct.unpack_from(STRUCT_FMT, blob, offset) for offset in range(0, len(blob), STRUCT_SIZE)]
+
+    dag = np.zeros([p, p], dtype=np.uint8)
+    for i, j, e in edges:
+      if e == 2: dag[i, j] = 1
+      if e == 1: dag[j, i] = 1
+
+    graphs.append(construct_graph(dag, nodes))
+    times.append(timer())
+
+
+  if 0:
+    algs.append("boss-from-data")
+
+    blob = cg.boss_from_data(data_buf, knwl_buf, 2.0, 1)
+    edges = [struct.unpack_from(STRUCT_FMT, blob, offset) for offset in range(0, len(blob), STRUCT_SIZE)]
+
+    dag = np.zeros([p, p], dtype=np.uint8)
+    for i, j, e in edges:
+      if e == 2: dag[i, j] = 1
+      if e == 1: dag[j, i] = 1
+
+    graphs.append(construct_graph(dag, nodes))
+    times.append(timer())
 
   return (tg.GraphUtils.replaceNodes(cpdag, nodes), data, [(alg, tg.GraphUtils.replaceNodes(graphs[i], nodes), times[i + 1] - times[i]) for i, alg in enumerate(algs)])
 
@@ -111,7 +147,7 @@ reps = 10
 
 unique_sims = [(n, p, ad, sf)
                for n in [1000]
-               for p in [60]
+               for p in [100]
                for ad in [10]
                for sf in [(1, 0)]]
 

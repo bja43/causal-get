@@ -39,6 +39,8 @@ typedef struct {
 
 static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
 {
+  (void)self;   // mark 'self' as unused to suppress warning
+
   Py_buffer cov_view;
   Py_buffer knwl_view;
 
@@ -52,13 +54,14 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
     return NULL;
   }
 
-  printf("discount: %4.2f, restarts: %u, seed: %u\n", discount, restarts, seed);
+  // printf("discount: %4.2f, restarts: %u, seed: %u\n", discount, restarts, seed);
 
   if (seed) srand(seed);
   else srand(time(NULL));
 
   void *itr;
   
+  // HOW DOES THIS PTR ARITHMETIC KNOW HOW FAR TO ADVANCE???
   itr = cov_view.buf;
   uint32_t n = *((uint32_t *)itr);
   itr += sizeof(uint32_t);
@@ -66,7 +69,7 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
   itr += sizeof(uint32_t);
   float *cov = (float *)itr;
 
-  printf("%u %u\n", n, p);
+  // printf("%u %u\n", n, p);
 
   itr = knwl_view.buf;
   Knowledge knwl = {0};
@@ -104,12 +107,12 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
   EdgeList graph = {0};
   graph.edges = malloc(sizeof(Edge) * p * p); // overkill for now
 
-  for (size_t i = 0; i < p; i++) {
-    for (size_t j = 0; j < p; j++) {
-      printf(" %hhu", tmp[i * p + j]);
-    }
-    printf("\n");
-  }
+  // for (size_t i = 0; i < p; i++) {
+  //   for (size_t j = 0; j < p; j++) {
+  //     printf(" %hhu", tmp[i * p + j]);
+  //   }
+  //   printf("\n");
+  // }
 
   for (uint32_t i = 0; i < p; i++) {
     for (uint32_t j = 0; j < p; j++) {
@@ -134,6 +137,8 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
 
 static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)
 {
+  (void)self;   // mark 'self' as unused to suppress warning
+
   Py_buffer data_view;
   Py_buffer knwl_view;
 
@@ -147,7 +152,7 @@ static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)
     return NULL;
   }
 
-  printf("discount: %4.2f, restarts: %u, seed: %u\n", discount, restarts, seed);
+  // printf("discount: %4.2f, restarts: %u, seed: %u\n", discount, restarts, seed);
 
   if (seed) srand(seed);
   else srand(time(NULL));
@@ -161,7 +166,7 @@ static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)
   itr += sizeof(uint32_t);
   float *data = (float *)itr;
 
-  printf("%u %u\n", n, p);
+  // printf("%u %u\n", n, p);
 
   itr = knwl_view.buf;
   Knowledge knwl = {0};
@@ -199,12 +204,12 @@ static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)
   EdgeList graph = {0};
   graph.edges = malloc(sizeof(Edge) * p * p); // overkill for now
 
-  for (size_t i = 0; i < p; i++) {
-    for (size_t j = 0; j < p; j++) {
-      printf(" %hhu", tmp[i * p + j]);
-    }
-    printf("\n");
-  }
+  // for (size_t i = 0; i < p; i++) {
+  //   for (size_t j = 0; j < p; j++) {
+  //     printf(" %hhu", tmp[i * p + j]);
+  //   }
+  //   printf("\n");
+  // }
 
   for (uint32_t i = 0; i < p; i++) {
     for (uint32_t j = 0; j < p; j++) {
