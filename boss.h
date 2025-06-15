@@ -29,7 +29,7 @@
 void shuffle(uint32_t *arr, size_t size);
 
 bool better_mutation(uint32_t *order, uint32_t* ptr, GST *gsts, Bit_Array prefix, Bit_Array skip, Priority_Queue *pq, BIC *bic);
-void boss_search(float *R, size_t n, size_t p, float lambda, size_t restarts, uint8_t *graph);
+void boss_search(BIC *bic, size_t restarts, uint8_t *graph);
 
 #endif // BOSS_H_
 
@@ -117,13 +117,9 @@ bool better_mutation(uint32_t *order, uint32_t* ptr, GST *gsts, Bit_Array prefix
 }
 
 
-void boss_search(float *R, size_t n, size_t p, float lambda, size_t restarts, uint8_t *graph)
+void boss_search(BIC *bic, size_t restarts, uint8_t *graph)
 {
-  double *L = malloc(sizeof(double) * TNU(p));
-  double *D = malloc(sizeof(double) * p);
-  uint32_t *z = malloc(sizeof(uint32_t) * p);
-
-  BIC bic = { lambda, R, log(n) / (2 * n), p, L, D, 0, 0, z };
+  size_t p = bic->p;
 
   Priority_Queue pq = pq_alloc(p);
   Bit_Array prefix = bta_alloc(p);
@@ -141,7 +137,7 @@ void boss_search(float *R, size_t n, size_t p, float lambda, size_t restarts, ui
   uint32_t *ptr;
 
   GST *gsts = malloc(sizeof(GST) * p);
-  for (size_t i = 0; i < p; i++) gst_init(gsts + i, i, &bic);
+  for (size_t i = 0; i < p; i++) gst_init(gsts + i, i, bic);
 
   float best_score;
   bool improved;
@@ -160,7 +156,7 @@ void boss_search(float *R, size_t n, size_t p, float lambda, size_t restarts, ui
       for (size_t j = 0; j < p; j++) {
         ptr = order;
         while (*ptr != itr[j]) ptr++;
-        improved |= better_mutation(order, ptr, gsts, prefix, skip, &pq, &bic);
+        improved |= better_mutation(order, ptr, gsts, prefix, skip, &pq, bic);
       }
     } while(improved);
    
@@ -168,7 +164,7 @@ void boss_search(float *R, size_t n, size_t p, float lambda, size_t restarts, ui
     float score = 0;
     bta_reset(prefix);
     for (size_t j = 0; j < p; j++) {
-      score += gst_trace(gsts + order[j], prefix, skip, &pq, &bic);
+      score += gst_trace(gsts + order[j], prefix, skip, &pq, bic);
       bta_set(prefix, order[j]);
     }
 
@@ -190,11 +186,11 @@ void boss_search(float *R, size_t n, size_t p, float lambda, size_t restarts, ui
 
   bta_reset(prefix);
   for (size_t i = 0; i < p; i++) {
-    gst_trace(gsts + best[i], prefix, skip, &pq, &bic);
-    bic_shrink(&bic);
+    gst_trace(gsts + best[i], prefix, skip, &pq, bic);
+    bic_shrink(bic);
     bta_set(prefix, best[i]);
-    for (size_t j = 0; j < bic.q; j++) {
-      graph[best[i] * p + bic.z[j]] = 1;
+    for (size_t j = 0; j < bic->q; j++) {
+      graph[best[i] * p + bic->z[j]] = 1;
     }
   }
 
@@ -208,10 +204,6 @@ void boss_search(float *R, size_t n, size_t p, float lambda, size_t restarts, ui
   pq_free(pq);
   bta_free(prefix); 
   bta_free(skip);
-
-  free(L);
-  free(D);
-  free(z);
 }
 
 #endif // BOSS_IMPLEMENTATION

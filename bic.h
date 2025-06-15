@@ -13,14 +13,19 @@
 #include "bta.h"
 #endif // BTA_H_
 
-typedef struct BIC {
+typedef struct BIC BIC;
+
+struct BIC {
   // parameters
-  float lambda;
+  float discount;
 
   // data
-  float *R;
-  float logn;
+  float *X;
+  size_t n;
   size_t p;
+
+  // covariance
+  float (*get_cov) (BIC *bic, uint32_t a, uint32_t b);
 
   // LDL
   double *L;
@@ -30,7 +35,11 @@ typedef struct BIC {
   // indices
   uint32_t y;
   uint32_t *z;
-} BIC;
+};
+
+
+float get_cov_precomp(BIC *bic, uint32_t a, uint32_t b);
+float get_cov_onfly(BIC *bic, uint32_t a, uint32_t b);
 
 void bic_update(BIC *bic, uint32_t x);
 float bic_score(BIC *bic);
@@ -45,11 +54,42 @@ void bic_shrink(BIC *bic);
 
 #ifdef BIC_IMPLEMENTATION
 
+
+float get_cov_precomp(BIC *bic, uint32_t a, uint32_t b)
+{
+  return bic->X[a * bic->p + b];
+}
+
+
+float get_cov_onfly(BIC *bic, uint32_t a, uint32_t b)
+{
+  size_t n = bic->n;
+  if (n < 2) return 0.0f;
+
+  float *x = &bic->X[a * n];
+  float *y = &bic->X[b * n];
+
+  float mu_x = 0.0f;
+  float mu_y = 0.0f;
+  for (size_t i = 0; i < n; i++) {
+    mu_x += x[i];
+    mu_y += y[i];
+  }
+  mu_x /= n;
+  mu_y /= n;
+
+  float cov_xy = 0.0f;
+  for (size_t i = 0; i < n; i++) {
+    cov_xy += (x[i] - mu_x) * (y[i] - mu_y);
+  }
+  cov_xy /= n;
+
+  return cov_xy;
+}
+
+
 void bic_update(BIC *bic, uint32_t x)
 {
-  float *R = bic->R;
-  size_t p = bic->p;
-
   double *L = bic->L;
   double *D = bic->D;
   size_t i = bic->q;
@@ -57,16 +97,16 @@ void bic_update(BIC *bic, uint32_t x)
   uint32_t *z = bic->z;
 
   for (size_t j = 0; j < i; j++) {
-
-    double acc = R[x * p + z[j]];
-    
+    //double acc = X[x * p + z[j]];
+    double acc = bic->get_cov(bic, x, z[j]);
     for (size_t k = 0; k < j; k++) {
       acc -= GET(L, i, k) * GET(L, j, k);
     }
     GET(L, i, j) = acc * D[j];
   }
 
-  D[i] = R[p * x + x];
+  // D[i] = X[p * x + x];
+  D[i] = bic->get_cov(bic, x, x);
 
   // THE SUM OF SQUARES MUST BE LESS THAN ONE
   for (size_t k = 0; k < i; k++) {
@@ -82,10 +122,10 @@ float bic_score(BIC *bic)
 {
   bic_update(bic, bic->y);
 
-  float c = bic->lambda;     // penalty discount
-  size_t k = bic->q;         // num parents
-  float ll = log(bic->D[k]); // (nll / n) + const
-  float logn = bic->logn;    // logn / 2n
+  float c = bic->discount;                  // discount
+  size_t k = bic->q;                        // num parents
+  float ll = log(bic->D[k]);                // (nll / n) + const
+  float logn = log(bic->n) / (2 * bic->n);  // logn / 2n
 
   return ll - c * k * logn;
 }
@@ -103,14 +143,14 @@ int bic_contains(uint32_t *z, size_t size, uint32_t x)
 
 
 // change to uint32_t or size_t?
-// VERIFY!
 int bic_find(uint32_t *z, size_t size, uint32_t x)
 {
-  for (size_t i = 0; i < size + 1; i++) {
+  for (size_t i = 0; i < size; i++) {
     if (z[i] == x) return i;
   }
 
-  // should this be size?
+  // if not found return the last element 
+  // (assumes the item is in the list)
   return size;
 }
 

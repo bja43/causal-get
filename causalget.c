@@ -11,6 +11,9 @@
 #include "boss.h"
 #endif // BOSS_H_
 
+#ifndef BIC_H_
+#include "bic.h"
+#endif // BIC_H_
 
 // MOVE THIS SOMEWHERE ELSE
 typedef struct {
@@ -49,7 +52,7 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
     return NULL;
   }
 
-  printf("discount: %f, restarts: %u, seed: %u\n", discount, restarts, seed);
+  printf("discount: %4.2f, restarts: %u, seed: %u\n", discount, restarts, seed);
 
   if (seed) srand(seed);
   else srand(time(NULL));
@@ -63,12 +66,6 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
   itr += sizeof(uint32_t);
   float *cov = (float *)itr;
 
-  for (size_t i = 0; i < p; i++) {
-    for (size_t j = 0; j < p; j++) {
-      printf(" %6.3f", cov[i * p + j]);
-    }
-    printf("\n");
-  }
   printf("%u %u\n", n, p);
 
   itr = knwl_view.buf;
@@ -88,11 +85,21 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
   knwl_graph.edges = (Edge *)itr;
 
 
+  // ADD KNOWLEDGE TO THIS CALL!
+  double *L = malloc(sizeof(double) * TNU(p));
+  double *D = malloc(sizeof(double) * p);
+  uint32_t *z = malloc(sizeof(uint32_t) * p);
+
   // TEMPORARY SOLUTION!
   uint8_t *tmp = malloc(sizeof(uint8_t) * p * p);
 
-  // ADD KNOWLEDGE TO THIS CALL!
-  boss_search(cov, n, p, discount, restarts, tmp);
+  BIC bic = { discount, cov, n, p, get_cov_precomp, L, D, 0, 0, z };
+
+  boss_search(&bic, restarts, tmp);
+
+  free(L);
+  free(D);
+  free(z);
 
   EdgeList graph = {0};
   graph.edges = malloc(sizeof(Edge) * p * p); // overkill for now
@@ -127,18 +134,23 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
 
 static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)
 {
-
-  printf("THIS IS NOT HOOKED UP TO BOSS YET\n");
-  printf("THE CURRENT OUTPUT IS FOR TESTING PURPOSES ONLY\n");
-
   Py_buffer data_view;
   Py_buffer knwl_view;
 
-  static char *kwlist[] = {"data", "knwl", NULL};
+  float discount = 1.0;
+  uint32_t restarts = 1;
+  uint32_t seed = 0;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kw, "y*y*", kwlist, &data_view, &knwl_view)) {
+  static char *kwlist[] = {"data", "knowledge", "discount", "restarts", "seed", NULL};
+
+  if (!PyArg_ParseTupleAndKeywords(args, kw, "y*y*|fII", kwlist, &data_view, &knwl_view, &discount, &restarts, &seed)) {
     return NULL;
   }
+
+  printf("discount: %4.2f, restarts: %u, seed: %u\n", discount, restarts, seed);
+
+  if (seed) srand(seed);
+  else srand(time(NULL));
 
   void *itr;
   
@@ -149,12 +161,6 @@ static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)
   itr += sizeof(uint32_t);
   float *data = (float *)itr;
 
-  for (size_t i = 0; i < n; i++) {
-    for (size_t j = 0; j < p; j++) {
-      printf(" %6.3f", data[i * p + j]);
-    }
-    printf("\n");
-  }
   printf("%u %u\n", n, p);
 
   itr = knwl_view.buf;
@@ -173,26 +179,46 @@ static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)
   itr += sizeof(uint32_t);
   knwl_graph.edges = (Edge *)itr;
 
-  // print the knwl groups
-  size_t offset = 0;
-  for (size_t i = 0; i < knwl.num_groups; i++) {
-    printf("Group %zu:", i);
-    for (size_t j = 0; j < knwl.group_sizes[i]; j++)
-      printf(" %u", knwl.group_members[offset + j]);
-    offset += knwl.group_sizes[i];
+
+  // ADD KNOWLEDGE TO THIS CALL!
+  double *L = malloc(sizeof(double) * TNU(p));
+  double *D = malloc(sizeof(double) * p);
+  uint32_t *z = malloc(sizeof(uint32_t) * p);
+
+  // TEMPORARY SOLUTION!
+  uint8_t *tmp = malloc(sizeof(uint8_t) * p * p);
+
+  BIC bic = { discount, data, n, p, get_cov_onfly, L, D, 0, 0, z };
+
+  boss_search(&bic, restarts, tmp);
+
+  free(L);
+  free(D);
+  free(z);
+
+  EdgeList graph = {0};
+  graph.edges = malloc(sizeof(Edge) * p * p); // overkill for now
+
+  for (size_t i = 0; i < p; i++) {
+    for (size_t j = 0; j < p; j++) {
+      printf(" %hhu", tmp[i * p + j]);
+    }
     printf("\n");
   }
 
-  // print forbidden knwl knwl_graph (on groups)
-  for (size_t i = 0; i < knwl_graph.num_edges; i++) {
-    if (knwl_graph.edges[i].edge) {
-      printf("%zu. %u <-- %u\n", i, knwl_graph.edges[i].i, knwl_graph.edges[i].j);
-    } else if (knwl_graph.edges[i].edge == 2) {
-      printf("%zu. %u --> %u\n", i, knwl_graph.edges[i].i, knwl_graph.edges[i].j);
+  for (uint32_t i = 0; i < p; i++) {
+    for (uint32_t j = 0; j < p; j++) {
+      if (tmp[i * p + j]) {
+        Edge edge = {j, i, 1};
+        graph.edges[graph.num_edges++] = edge;
+      }
     }
   }
 
-  PyObject *edges = PyBytes_FromStringAndSize((const char *)knwl_graph.edges, knwl_graph.num_edges * sizeof(Edge));
+  PyObject *edges = PyBytes_FromStringAndSize((const char *)graph.edges, graph.num_edges * sizeof(Edge));
+
+  free(tmp);
+  free(graph.edges);
 
   PyBuffer_Release(&data_view);
   PyBuffer_Release(&knwl_view);
@@ -225,3 +251,25 @@ PyMODINIT_FUNC PyInit_causalget(void)
 {
   return PyModule_Create(&moduledef);
 }
+
+
+
+
+//  // print the knwl groups
+//  size_t offset = 0;
+//  for (size_t i = 0; i < knwl.num_groups; i++) {
+//    printf("Group %zu:", i);
+//    for (size_t j = 0; j < knwl.group_sizes[i]; j++)
+//      printf(" %u", knwl.group_members[offset + j]);
+//    offset += knwl.group_sizes[i];
+//    printf("\n");
+//  }
+//
+//  // print forbidden knwl knwl_graph (on groups)
+//  for (size_t i = 0; i < knwl_graph.num_edges; i++) {
+//    if (knwl_graph.edges[i].edge) {
+//      printf("%zu. %u <-- %u\n", i, knwl_graph.edges[i].i, knwl_graph.edges[i].j);
+//    } else if (knwl_graph.edges[i].edge == 2) {
+//      printf("%zu. %u --> %u\n", i, knwl_graph.edges[i].i, knwl_graph.edges[i].j);
+//    }
+//  }
