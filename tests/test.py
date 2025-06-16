@@ -114,7 +114,7 @@ def run_sim(n, p, ad, sf):
   if 1:
     algs.append("boss-from-cov")
 
-    blob = cg.boss_from_cov(cov_buf, knwl_buf, 2.0, 10) 
+    blob = cg.boss_from_cov(cov_buf, knwl_buf, 2.0, 1) 
     edges = [struct.unpack_from(STRUCT_FMT, blob, offset) for offset in range(0, len(blob), STRUCT_SIZE)]
 
     dag = np.zeros([p, p], dtype=np.uint8)
@@ -126,7 +126,7 @@ def run_sim(n, p, ad, sf):
     times.append(timer())
 
 
-  if 1:
+  if 0:
     algs.append("boss-from-data")
 
     blob = cg.boss_from_data(data_buf, knwl_buf, 2.0, 1)
@@ -143,12 +143,12 @@ def run_sim(n, p, ad, sf):
   return (tg.GraphUtils.replaceNodes(cpdag, nodes), data, [(alg, tg.GraphUtils.replaceNodes(graphs[i], nodes), times[i + 1] - times[i]) for i, alg in enumerate(algs)])
 
 
-reps = 10
+reps = 1
 
 unique_sims = [(n, p, ad, sf)
                for n in [1000]
-               for p in [30]
-               for ad in [6]
+               for p in [400]
+               for ad in [10]
                for sf in [(1, 0)]]
 
 

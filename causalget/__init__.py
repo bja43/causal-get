@@ -21,6 +21,7 @@ def boss(data, n=None, discount=1.0, restarts=1, seed=None):
   knwl_buf = struct.pack(byte_order + "III", 0, 0, 0)
 
   if isinstance(n, int) and isinstance(data, np.ndarray):
+    print("boss from cov")
     _, p = data.shape
     R = data.astype(np.float32) # float32
     cov_buf = struct.pack(byte_order + "II", n, p)
@@ -28,6 +29,7 @@ def boss(data, n=None, discount=1.0, restarts=1, seed=None):
     blob = boss_from_cov(cov_buf, knwl_buf, float(discount), int(restarts)) 
 
   elif isinstance(data, np.ndarray):
+    print("boss from data")
     n, p = data.shape
     X = data.astype(np.float32).T # float32 transposed 
     data_buf = struct.pack(byte_order + "II", n, p)
@@ -35,6 +37,7 @@ def boss(data, n=None, discount=1.0, restarts=1, seed=None):
     blob = boss_from_data(data_buf, knwl_buf, float(discount), int(restarts))
 
   elif isinstance(data, pd.DataFrame):
+    print("boss from data")
     n, p = data.shape
     X = data.values.astype(np.float32).T # float32 transposed
     data_buf = struct.pack(byte_order + "II", n, p)
