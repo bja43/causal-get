@@ -1,9 +1,14 @@
 .DS_Store
+causalget/.DS_Store
+tests/.DS_Store
+
+__pycache__/
+causalget/__pycache__/
+tests/__pycache__/
 
 env/
-__pycache__/
+
 build/
+
 dist/
 causal_get.egg-info/
-
-*.so
