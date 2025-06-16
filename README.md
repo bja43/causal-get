@@ -1,7 +1,8 @@
 # CausalGET
 Causal Graph Estimation Toolbox
 
-How to build:
+How to build and install:
 ```
-python3 setup.py build_ext --inplace
+python -m build
+pip install dist/*.whl
 ```

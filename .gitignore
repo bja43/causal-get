@@ -1,7 +1,9 @@
 .DS_Store
 
+env/
 __pycache__/
 build/
-env/
+dist/
+causal_get.egg-info/
 
 *.so

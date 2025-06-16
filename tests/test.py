@@ -91,7 +91,7 @@ def run_sim(n, p, ad, sf):
   times = [timer()]
 
 
-  if 0:
+  if 1:
     algs.append("boss-tetrad")
 
     score = ts.score.SemBicScore(data, True)
@@ -126,7 +126,7 @@ def run_sim(n, p, ad, sf):
     times.append(timer())
 
 
-  if 0:
+  if 1:
     algs.append("boss-from-data")
 
     blob = cg.boss_from_data(data_buf, knwl_buf, 2.0, 1)
@@ -147,8 +147,8 @@ reps = 10
 
 unique_sims = [(n, p, ad, sf)
                for n in [1000]
-               for p in [100]
-               for ad in [10]
+               for p in [30]
+               for ad in [6]
                for sf in [(1, 0)]]
 
 

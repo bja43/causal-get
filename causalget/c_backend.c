@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <stdint.h>
+#include <stdlib.h>
 #include <time.h>
 
 #define PY_SSIZE_T_CLEAN
@@ -241,8 +241,8 @@ static PyMethodDef methods[] = {
 
 static struct PyModuleDef moduledef = {
   PyModuleDef_HEAD_INIT,
-  "causalget",
-  "Causal Graph Estimation Toolbox",
+  "c_backend",
+  "C Backend for Causal Graph Estimation Toolbox",
   -1,
   methods,
   NULL,
@@ -252,7 +252,7 @@ static struct PyModuleDef moduledef = {
 };
 
 
-PyMODINIT_FUNC PyInit_causalget(void)
+PyMODINIT_FUNC PyInit_c_backend(void)
 {
   return PyModule_Create(&moduledef);
 }
