@@ -59,14 +59,11 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
   if (seed) srand(seed);
   else srand(time(NULL));
 
-  void *itr;
+  uint32_t *itr;
   
-  // HOW DOES THIS PTR ARITHMETIC KNOW HOW FAR TO ADVANCE???
   itr = cov_view.buf;
-  uint32_t n = *((uint32_t *)itr);
-  itr += sizeof(uint32_t);
-  uint32_t p = *((uint32_t *)itr);
-  itr += sizeof(uint32_t);
+  uint32_t n = *itr++;
+  uint32_t p = *itr++;
   float *cov = (float *)itr;
 
   // printf("%u %u\n", n, p);
@@ -74,17 +71,15 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
   itr = knwl_view.buf;
   Knowledge knwl = {0};
 
-  knwl.num_groups = *((uint32_t *)itr);
-  itr += sizeof(uint32_t);
-  knwl.group_sizes = (uint32_t *)itr;
-  itr += sizeof(uint32_t) * knwl.num_groups;
-  knwl.group_members = (uint32_t *)itr;
+  knwl.num_groups = *itr++;
+  knwl.group_sizes = itr;
+  itr += knwl.num_groups;
+  knwl.group_members = itr;
   for (size_t i = 0; i < knwl.num_groups; i++)
-    itr += sizeof(uint32_t) * knwl.group_sizes[i];
+    itr += knwl.group_sizes[i];
 
   EdgeList knwl_graph = knwl.forbidden;
-  knwl_graph.num_edges = *((uint32_t *)itr);
-  itr += sizeof(uint32_t);
+  knwl_graph.num_edges = *itr++;
   knwl_graph.edges = (Edge *)itr;
 
 
@@ -157,13 +152,11 @@ static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)
   if (seed) srand(seed);
   else srand(time(NULL));
 
-  void *itr;
+  uint32_t *itr;
   
   itr = data_view.buf;
-  uint32_t n = *((uint32_t *)itr);
-  itr += sizeof(uint32_t);
-  uint32_t p = *((uint32_t *)itr);
-  itr += sizeof(uint32_t);
+  uint32_t n = *itr++;
+  uint32_t p = *itr++;
   float *data = (float *)itr;
 
   // printf("%u %u\n", n, p);
@@ -171,17 +164,15 @@ static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)
   itr = knwl_view.buf;
   Knowledge knwl = {0};
 
-  knwl.num_groups = *((uint32_t *)itr);
-  itr += sizeof(uint32_t);
-  knwl.group_sizes = (uint32_t *)itr;
-  itr += sizeof(uint32_t) * knwl.num_groups;
-  knwl.group_members = (uint32_t *)itr;
+  knwl.num_groups = *itr++;
+  knwl.group_sizes = itr;
+  itr += knwl.num_groups;
+  knwl.group_members = itr;
   for (size_t i = 0; i < knwl.num_groups; i++)
-    itr += sizeof(uint32_t) * knwl.group_sizes[i];
+    itr += knwl.group_sizes[i];
 
   EdgeList knwl_graph = knwl.forbidden;
-  knwl_graph.num_edges = *((uint32_t *)itr);
-  itr += sizeof(uint32_t);
+  knwl_graph.num_edges = *itr++;
   knwl_graph.edges = (Edge *)itr;
 
 
@@ -233,8 +224,8 @@ static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)
 
 
 static PyMethodDef methods[] = {
-  { "boss_from_cov", (PyCFunction)boss_from_cov, METH_VARARGS | METH_KEYWORDS, "runs boss from cov..." },
-  { "boss_from_data", (PyCFunction)boss_from_data, METH_VARARGS | METH_KEYWORDS, "runs boss from data..." },
+  { "boss_from_cov", (PyCFunction)(void(*)(void))boss_from_cov, METH_VARARGS | METH_KEYWORDS, "runs boss from cov..." },
+  { "boss_from_data", (PyCFunction)(void(*)(void))boss_from_data, METH_VARARGS | METH_KEYWORDS, "runs boss from data..." },
   { NULL, NULL, 0, NULL }
 };
 
