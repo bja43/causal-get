@@ -1,3 +1,28 @@
+[project]
+name = "causal-get" # should there be a "-" in the name?
+version = "0.0.1"
+authors = [
+  { name = "Bryan Andrews", email = "andr1017@umn.edu" },
+]
+description = "Causal Graph Estimation Toolbox"
+readme = "README.md"
+
+# requires-python = ">=3.6" # update version
+# license = { text = "MIT" }
+# classifiers = [
+#   "Programming Language :: Python :: 3",
+#   "License :: OSI Approved :: MIT License",
+#   "Operating System :: OS Independent",
+# ]
+# dependencies = [
+#   "numpy>=1.20.0", # update version
+#   "pandas>=1.20.0", # update version
+# ]
+
 [build-system]
 requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project.urls]
+Homepage = "https://github.com/bja43/causal-get"
+Issues = "https://github.com/bja43/causal-get"
