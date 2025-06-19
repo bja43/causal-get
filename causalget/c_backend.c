@@ -93,7 +93,9 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
 
   BIC bic = { discount, cov, n, p, get_cov_precomp, L, D, 0, 0, z };
 
+  Py_BEGIN_ALLOW_THREADS
   boss_search(&bic, restarts, tmp);
+  Py_END_ALLOW_THREADS
 
   free(L);
   free(D);
@@ -186,7 +188,9 @@ static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)
 
   BIC bic = { discount, data, n, p, get_cov_onfly, L, D, 0, 0, z };
 
+  Py_BEGIN_ALLOW_THREADS
   boss_search(&bic, restarts, tmp);
+  Py_END_ALLOW_THREADS
 
   free(L);
   free(D);

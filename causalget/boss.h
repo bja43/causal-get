@@ -105,6 +105,7 @@ bool better_mutation(uint32_t *order, uint32_t* ptr, GST *gsts, Bit_Array prefix
     free(scores);
     return false;
   }
+  printf("   score: %f\n", scores[i] + 1e-3); // added for debugging
   free(scores);
 
   uint32_t value = order[i];
@@ -145,12 +146,12 @@ void boss_search(BIC *bic, size_t restarts, uint8_t *graph)
   for (size_t i = 0; i < restarts; i++) {
     shuffle(order, p);
 
-    printf("%zu\n", i);
+    // printf("%zu\n", i);
 
     do {
       for (size_t j = 0; j < p; j++) itr[j] = order[j];
 
-      printf("bm\n");
+      printf("better mutation...\n");
 
       improved = false;
       for (size_t j = 0; j < p; j++) {
@@ -168,7 +169,7 @@ void boss_search(BIC *bic, size_t restarts, uint8_t *graph)
       bta_set(prefix, order[j]);
     }
 
-    printf("%f\n", score);
+    // printf("%f\n", score);
 
     if (i == 0 || score > best_score) {
       best_score = score;
@@ -176,7 +177,7 @@ void boss_search(BIC *bic, size_t restarts, uint8_t *graph)
     }
   }
 
-  printf("%f\n", best_score);
+  // printf("%f\n", best_score);
 
   for (size_t i = 0; i < p; i++) {
     for (size_t j = 0; j < p; j++) {

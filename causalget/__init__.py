@@ -3,6 +3,7 @@ import struct
 
 import numpy as np
 import pandas as pd
+import threading
 
 from .c_backend import (
   boss_from_cov,
@@ -10,7 +11,28 @@ from .c_backend import (
 )
 
 
-# ignoring knowledge and seed
+def worker_bfc(cov_buf, knwl_buf, discount, restarts, seed, ret):
+  parameters = []
+  parameters.append(cov_buf)
+  parameters.append(knwl_buf)
+  parameters.append(float(discount))
+  parameters.append(int(restarts))
+  if seed is not None: parameters.append(seed)
+  blob = boss_from_cov(*parameters) 
+  ret["blob"] = blob
+
+def worker_bfd(data_buff, knwl_buf, discount, restarts, seed, ret):
+  parameters = []
+  parameters.append(data_buf)
+  parameters.append(knwl_buf)
+  parameters.append(float(discount))
+  parameters.append(int(restarts))
+  if seed is not None: parameters.append(seed)
+  blob = boss_from_data(*parameters) 
+  ret["blob"] = blob
+
+
+# currently ignoring knowledge
 def boss(data, n=None, discount=1.0, restarts=1, seed=None):
   '''
   runs the boss algorithm...
@@ -20,13 +42,16 @@ def boss(data, n=None, discount=1.0, restarts=1, seed=None):
 
   knwl_buf = struct.pack(byte_order + "III", 0, 0, 0)
 
+  ret = {}
+
   if isinstance(n, int) and isinstance(data, np.ndarray):
     print("boss from cov")
     _, p = data.shape
     R = data.astype(np.float32) # float32
     cov_buf = struct.pack(byte_order + "II", n, p)
     cov_buf += R.tobytes()
-    blob = boss_from_cov(cov_buf, knwl_buf, float(discount), int(restarts)) 
+    # blob = boss_from_cov(cov_buf, knwl_buf, float(discount), int(restarts)) 
+    thread = threading.Thread(target=worker_bfc, args=(cov_buf, knwl_buf, discount, restarts, seed, ret)) 
 
   elif isinstance(data, np.ndarray):
     print("boss from data")
@@ -34,7 +59,8 @@ def boss(data, n=None, discount=1.0, restarts=1, seed=None):
     X = data.astype(np.float32).T # float32 transposed 
     data_buf = struct.pack(byte_order + "II", n, p)
     data_buf += X.tobytes()
-    blob = boss_from_data(data_buf, knwl_buf, float(discount), int(restarts))
+    # blob = boss_from_data(data_buf, knwl_buf, float(discount), int(restarts))
+    thread = threading.Thread(target=worker_bfd, args=(cov_buf, knwl_buf, discount, restarts, seed, ret)) 
 
   elif isinstance(data, pd.DataFrame):
     print("boss from data")
@@ -42,11 +68,25 @@ def boss(data, n=None, discount=1.0, restarts=1, seed=None):
     X = data.values.astype(np.float32).T # float32 transposed
     data_buf = struct.pack(byte_order + "II", n, p)
     data_buf += X.tobytes()
-    blob = boss_from_data(data_buf, knwl_buf, float(discount), int(restarts))
+    # blob = boss_from_data(data_buf, knwl_buf, float(discount), int(restarts))
+    thread = threading.Thread(target=worker_bfd, args=(cov_buf, knwl_buf, discount, restarts, seed, ret)) 
 
   else:
+    # replace with raise
     print("ERROR: invalid input")
-    quit()
+    exit(1)
+
+  thread.start()
+
+  try:
+    while thread.is_alive():
+      thread.join(timeout=0.1)
+  except KeyboardInterrupt:
+    # replace with raise
+    print("Interrupted")
+    exit(1)
+
+  blob = ret["blob"]
 
   STRUCT_FMT = byte_order + "iii"
   STRUCT_SIZE = struct.calcsize(STRUCT_FMT)
