@@ -36,7 +36,7 @@ X = ds.simulate(B, O, n)
 df = pd.DataFrame(X)
 R = df.corr().values
 
-## TESTING FROM COV $$
+## TESTING FROM COV ##
 
 print("from ndarray (corr):")
 dag = cg.boss(R, n=n, discount=2.0, restarts=10)
