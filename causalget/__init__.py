@@ -35,7 +35,19 @@ def worker_bfd(data_buff, knwl_buf, discount, restarts, seed, ret):
 # currently ignoring knowledge
 def boss(data, n=None, discount=1.0, restarts=1, seed=None):
   '''
-  runs the boss algorithm...
+  Runs the Best Order Score Serch (BOSS).
+
+  Parameters
+  ----------
+  data = covariance matrix or dataset (ndarry / datafrome)
+  n = specfiec the number of samples (only set if passing a covariance matrix) 
+  discount = specifies the penalty discount for the BIC score
+  restarts = speficies the number of random restarts
+  seed = used to set the random seed
+
+  Returns
+  -------
+  g = direct acyclic graph
   '''
 
   byte_order = "<" if sys.byteorder == "little" else ">"
