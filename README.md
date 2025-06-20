@@ -40,13 +40,13 @@ R = df.corr().values
 
 print("from ndarray (corr):")
 dag = cg.boss(R, n=n, discount=2.0, restarts=10)
-print(SHD: np.sum(dag == g))
+print("SHD:", np.sum(dag != g))
 print()
 
 ## TESTING FROM DATA ##
 
 print("from datafrom (data):")
 dag = cg.boss(df, discount=2.0, restarts=1)
-print(SHD: np.sum(dag == g))
+print("SHD:", np.sum(dag != g))
 print()
 ```

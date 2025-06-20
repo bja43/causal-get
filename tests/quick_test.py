@@ -7,8 +7,8 @@ import causalget as cg
 
 if __name__ == "__main__":
   n = 1000
-  p = 1000
-  ad = 20
+  p = 100
+  ad = 6
 
   g = ds.er_dag(p, ad=ad)
   # _, B, O = ds.corr(g)
@@ -21,19 +21,19 @@ if __name__ == "__main__":
 
   print("from ndarray (corr):")
   dag = cg.boss(R, n=n, discount=2)
-  print(dag)
+  print("SHD:", np.sum(dag != g))
   print()
 
   ## TESTING FROM DATA ##
 
   # print("from ndarray (data):")
   # dag = cg.boss(X)
-  # print(dag)
+  # print("SHD:", np.sum(dag != g))
   # print()
 
   # print("from dataframe:")
   # dag = cg.boss(df)
-  # print(dag)
+  # print("SHD:", np.sum(dag != g))
   # print()
 
   ## TESTING SEEDS ##

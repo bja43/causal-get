@@ -53,11 +53,14 @@ bool better_mutation(uint32_t *order, uint32_t* ptr, GST *gsts, Bit_Array prefix
   uint32_t *first = order;
   uint32_t *last = order + bic->p - 1;
 
-  float *scores = malloc(sizeof(float) * bic->p);
-  float *best = scores + bic->p - 1;
+  // float *scores = malloc(sizeof(float) * bic->p);
+  // float *best = scores + bic->p - 1;
+  double *scores = malloc(sizeof(double) * bic->p);
+  double *best = scores + bic->p - 1;
 
-  float score = 0;
-  bta_reset(prefix);
+  // float score = 0;
+  double score = 0;
+  bta_reset(prefix); // why reset here?
 
   while (1) {
     *scores = gst_trace(gsts + *ptr, prefix, skip, pq, bic) + score;
@@ -105,7 +108,7 @@ bool better_mutation(uint32_t *order, uint32_t* ptr, GST *gsts, Bit_Array prefix
     free(scores);
     return false;
   }
-  printf("   score: %f\n", scores[i] + 1e-3); // added for debugging
+  printf("   score: %.4f -> %.4f\n", scores[i], scores[j]); // added for debugging
   free(scores);
 
   uint32_t value = order[i];
