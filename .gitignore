@@ -6,7 +6,8 @@ __pycache__/
 causalget/__pycache__/
 tests/__pycache__/
 
-env/
+env311/
+env312/
 
 build/
 

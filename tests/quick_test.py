@@ -6,8 +6,8 @@ import causalget as cg
 
 
 if __name__ == "__main__":
-  n = 1000
-  p = 100
+  n = 500
+  p = 2000
   ad = 6
 
   g = ds.er_dag(p, ad=ad)

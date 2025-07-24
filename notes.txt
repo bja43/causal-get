@@ -1,0 +1,43 @@
+causal-get % cd ..;python -m build;pip install dist/causal_get-0.0.1-cp311-cp311-macosx_15_0_arm64.whl --force-reinstall;cd tests;python quick_test.py
+
+
+https://github.com/tinycthread/tinycthread
+
+
+compiler flags:
+
+  -std=c99
+  -std=c11
+  -std=c17
+
+  -Wall
+  -Werror
+  -Wextra (I THINK THIS DIDNT WORK ON WINDOWS)
+  -pedantic (hat does this actually do?)
+
+  -fsanitize=address
+
+  -O2
+  -O3
+
+
+todo:
+
+  check if we are leaking memory
+  set up valgrind test
+
+  refactor python with (un)/pack cov/data/knowledge functions
+
+  check struct member order for alignment
+  move lengths outside of GSNode
+
+  suborder refactor
+  score refactor
+  group varibles refactor
+  knowledge refactor
+
+  incorporate knowledge
+  incorporate graph representation
+
+  implement sp
+  implement grasp
