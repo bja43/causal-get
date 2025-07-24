@@ -50,17 +50,15 @@ void shuffle(uint32_t *arr, size_t size)
 
 bool better_mutation(uint32_t *order, uint32_t* ptr, GST *gsts, Bit_Array prefix, Bit_Array skip, Priority_Queue *pq, BIC *bic)
 {
+  // THIS IS ALREADY SET UP TO WORK ON SUBORDERS!!!
   uint32_t *first = order;
   uint32_t *last = order + bic->p - 1;
 
-  // float *scores = malloc(sizeof(float) * bic->p);
-  // float *best = scores + bic->p - 1;
-  double *scores = malloc(sizeof(double) * bic->p);
-  double *best = scores + bic->p - 1;
+  float *scores = malloc(sizeof(float) * bic->p);
+  float *best = scores + bic->p - 1;
 
-  // float score = 0;
-  double score = 0;
-  bta_reset(prefix); // why reset here?
+  double score = 0; // must be a double to prevent catestrophic cancellation
+  bta_reset(prefix); // do I really want to handle resetting here?
 
   while (1) {
     *scores = gst_trace(gsts + *ptr, prefix, skip, pq, bic) + score;

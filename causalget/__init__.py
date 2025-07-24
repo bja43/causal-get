@@ -39,8 +39,8 @@ def boss(data, n=None, discount=1.0, restarts=1, seed=None):
 
   Parameters
   ----------
-  data = covariance matrix or dataset (ndarry / datafrome)
-  n = specfiec the number of samples (only set if passing a covariance matrix) 
+  data = covariance matrix or dataset (ndarray / datafrome)
+  n = specifies the number of samples (only set if passing a covariance matrix) 
   discount = specifies the penalty discount for the BIC score
   restarts = speficies the number of random restarts
   seed = used to set the random seed
