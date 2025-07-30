@@ -4,6 +4,7 @@ import struct
 import numpy as np
 import pandas as pd
 import daosim as ds
+
 import causalget as cg
 
 
@@ -42,7 +43,7 @@ num_groups = 3
 # uint32
 group_members = [x for x in cols]
 
-# uint32 (in this example all groups have size 10)
+# uint32 (in this example all groups have size 7)
 # group index i with have size equal to the ith member of this list
 group_sizes = [p // 3 for i in range(num_groups)]
 
@@ -55,11 +56,15 @@ for i in range(num_groups):
 knwl_buf = struct.pack(byte_order + "I", num_groups)
 knwl_buf += struct.pack(byte_order + f"{num_groups}I", *group_sizes)
 knwl_buf += struct.pack(byte_order + f"{sum([i for i in group_sizes])}I", *group_members)
+
+# Dont allow more general knowledge graphs---only tiers
 knwl_buf += struct.pack(byte_order + "I", len(forbidden) // 3)
 knwl_buf += struct.pack(byte_order + f"{len(forbidden)}I", *forbidden)
 
+print(len(forbidden) // 3)
+# quit()
 
-if 0:
+if 1:
   blob = cg.boss_from_cov(cov_buf, knwl_buf, discount=1.0, restarts=10, seed=32)
 
   STRUCT_FMT = byte_order + "iii"
@@ -72,7 +77,7 @@ if 0:
     if e == 1: print(i, "-->", j)
     if e == 2: print(i, "<--", j)
 
-if 1:
+if 0:
   blob = cg.boss_from_data(data_buf, knwl_buf, discount=1.0, restarts=10, seed=32)
 
   STRUCT_FMT = byte_order + "iii"

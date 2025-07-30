@@ -1,4 +1,7 @@
-causal-get % cd ..;python -m build;pip install dist/causal_get-0.0.1-cp311-cp311-macosx_15_0_arm64.whl --force-reinstall;cd tests;python quick_test.py
+from the test directory:
+
+causal-get % cd ..;python -m build;pip install dist/*.whl --force-reinstall;cd tests;python quick_test.py
+causal-get % cd ..;python -m build;pip install dist/*.whl --force-reinstall;cd tests;python idea.py
 
 
 https://github.com/tinycthread/tinycthread
@@ -13,7 +16,7 @@ compiler flags:
   -Wall
   -Werror
   -Wextra (I THINK THIS DIDNT WORK ON WINDOWS)
-  -pedantic (hat does this actually do?)
+  -pedantic (what does this actually do?)
 
   -fsanitize=address
 
@@ -29,7 +32,6 @@ todo:
   refactor python with (un)/pack cov/data/knowledge functions
 
   check struct member order for alignment
-  move lengths outside of GSNode
 
   suborder refactor
   score refactor

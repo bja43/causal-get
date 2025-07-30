@@ -37,6 +37,24 @@ typedef struct {
 } Knowledge;
 
 
+
+
+// MOVE THIS SOMEWHERE ELSE
+void parse_knowledge(Knowledge *knwl, u_int32_t *itr)
+{
+  knwl->num_groups = *itr++;
+  knwl->group_sizes = itr;
+  itr += knwl->num_groups;
+  knwl->group_members = itr;
+  for (size_t i = 0; i < knwl->num_groups; i++)
+    itr += knwl->group_sizes[i];
+  knwl->forbidden.num_edges = *itr++;
+  knwl->forbidden.edges = (Edge *)itr;
+}
+
+
+
+
 static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
 {
   (void)self;   // mark 'self' as unused to suppress warning
@@ -70,20 +88,28 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
 
   itr = knwl_view.buf;
   Knowledge knwl = {0};
-
-  knwl.num_groups = *itr++;
-  knwl.group_sizes = itr;
-  itr += knwl.num_groups;
-  knwl.group_members = itr;
-  for (size_t i = 0; i < knwl.num_groups; i++)
-    itr += knwl.group_sizes[i];
-
+  parse_knowledge(&knwl, itr);
   EdgeList knwl_graph = knwl.forbidden;
-  knwl_graph.num_edges = *itr++;
-  knwl_graph.edges = (Edge *)itr;
 
+  // print the knwl groups
+  size_t offset = 0;
+  for (size_t i = 0; i < knwl.num_groups; i++) {
+    printf("Group %zu:", i);
+    for (size_t j = 0; j < knwl.group_sizes[i]; j++)
+      printf(" %u", knwl.group_members[offset + j]);
+    offset += knwl.group_sizes[i];
+    printf("\n");
+  }
 
-  // ADD KNOWLEDGE TO THIS CALL!
+  // print forbidden knwl knwl_graph (on groups)
+  for (size_t i = 0; i < knwl_graph.num_edges; i++) {
+    if (knwl_graph.edges[i].edge) {
+      printf("%zu. %u <-- %u\n", i, knwl_graph.edges[i].i, knwl_graph.edges[i].j);
+    } else if (knwl_graph.edges[i].edge == 2) {
+      printf("%zu. %u --> %u\n", i, knwl_graph.edges[i].i, knwl_graph.edges[i].j);
+    }
+  }
+
   double *L = malloc(sizeof(double) * TNU(p));
   double *D = malloc(sizeof(double) * p);
   uint32_t *z = malloc(sizeof(uint32_t) * p);
@@ -93,6 +119,7 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
 
   BIC bic = { discount, cov, n, p, get_cov_precomp, L, D, 0, 0, z };
 
+  // ADD KNOWLEDGE TO THIS CALL!
   Py_BEGIN_ALLOW_THREADS
   boss_search(&bic, restarts, tmp);
   Py_END_ALLOW_THREADS
@@ -103,13 +130,6 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
 
   EdgeList graph = {0};
   graph.edges = malloc(sizeof(Edge) * p * p); // overkill for now
-
-  // for (size_t i = 0; i < p; i++) {
-  //   for (size_t j = 0; j < p; j++) {
-  //     printf(" %hhu", tmp[i * p + j]);
-  //   }
-  //   printf("\n");
-  // }
 
   for (uint32_t i = 0; i < p; i++) {
     for (uint32_t j = 0; j < p; j++) {
@@ -165,20 +185,8 @@ static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)
 
   itr = knwl_view.buf;
   Knowledge knwl = {0};
+  parse_knowledge(&knwl, itr);
 
-  knwl.num_groups = *itr++;
-  knwl.group_sizes = itr;
-  itr += knwl.num_groups;
-  knwl.group_members = itr;
-  for (size_t i = 0; i < knwl.num_groups; i++)
-    itr += knwl.group_sizes[i];
-
-  EdgeList knwl_graph = knwl.forbidden;
-  knwl_graph.num_edges = *itr++;
-  knwl_graph.edges = (Edge *)itr;
-
-
-  // ADD KNOWLEDGE TO THIS CALL!
   double *L = malloc(sizeof(double) * TNU(p));
   double *D = malloc(sizeof(double) * p);
   uint32_t *z = malloc(sizeof(uint32_t) * p);
@@ -188,6 +196,7 @@ static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)
 
   BIC bic = { discount, data, n, p, get_cov_onfly, L, D, 0, 0, z };
 
+  // ADD KNOWLEDGE TO THIS CALL!
   Py_BEGIN_ALLOW_THREADS
   boss_search(&bic, restarts, tmp);
   Py_END_ALLOW_THREADS
@@ -196,15 +205,9 @@ static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)
   free(D);
   free(z);
 
+  // THE CURRENTLY RETURNED GRAPH OBJECT IS A TMP SOLUTION
   EdgeList graph = {0};
   graph.edges = malloc(sizeof(Edge) * p * p); // overkill for now
-
-  // for (size_t i = 0; i < p; i++) {
-  //   for (size_t j = 0; j < p; j++) {
-  //     printf(" %hhu", tmp[i * p + j]);
-  //   }
-  //   printf("\n");
-  // }
 
   for (uint32_t i = 0; i < p; i++) {
     for (uint32_t j = 0; j < p; j++) {

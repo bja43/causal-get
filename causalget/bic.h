@@ -154,7 +154,8 @@ int bic_find(uint32_t *z, size_t size, uint32_t x)
   return size;
 }
 
-
+// change to skip
+// void bic_grow(BIC *bic, Bit_Array skip)
 void bic_grow(BIC *bic, Bit_Array prefix)
 {
   size_t p = bic->p;
@@ -168,7 +169,8 @@ void bic_grow(BIC *bic, Bit_Array prefix)
   while(bic->q < p) {
     for (uint32_t x = 0; x < p; x++) {
       if (x == y) continue;
-      if (bta_check(prefix, x)) continue; // backward? continue if not in prefix?
+      // if (bta_check(skip, x)) continue; // change to skip?
+      if (!bta_check(prefix, x)) continue; // is this correct?
       if (bic_contains(z, bic->q, x)) continue;
 
       bic_update(bic, x);

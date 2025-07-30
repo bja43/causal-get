@@ -143,11 +143,11 @@ def run_sim(n, p, ad, sf):
   return (tg.GraphUtils.replaceNodes(cpdag, nodes), data, [(alg, tg.GraphUtils.replaceNodes(graphs[i], nodes), times[i + 1] - times[i]) for i, alg in enumerate(algs)])
 
 
-reps = 1
+reps = 10
 
 unique_sims = [(n, p, ad, sf)
                for n in [1000]
-               for p in [400]
+               for p in [100]
                for ad in [10]
                for sf in [(1, 0)]]
 

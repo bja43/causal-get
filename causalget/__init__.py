@@ -33,7 +33,7 @@ def worker_bfd(data_buff, knwl_buf, discount, restarts, seed, ret):
 
 
 # currently ignoring knowledge
-def boss(data, n=None, discount=1.0, restarts=1, seed=None):
+def boss(data, n=None, discount=1.0, restarts=1, knowledge=None, seed=None):
   '''
   Runs the Best Order Score Serch (BOSS).
 
@@ -43,6 +43,7 @@ def boss(data, n=None, discount=1.0, restarts=1, seed=None):
   n = specifies the number of samples (only set if passing a covariance matrix) 
   discount = specifies the penalty discount for the BIC score
   restarts = speficies the number of random restarts
+  knowledge = dictionary mapping uints (zero is forbid within) to list of strings
   seed = used to set the random seed
 
   Returns
@@ -52,7 +53,14 @@ def boss(data, n=None, discount=1.0, restarts=1, seed=None):
 
   byte_order = "<" if sys.byteorder == "little" else ">"
 
+
+
+  # for tier in knowledge:
+
+
+
   knwl_buf = struct.pack(byte_order + "III", 0, 0, 0)
+
 
   ret = {}
 
@@ -62,7 +70,6 @@ def boss(data, n=None, discount=1.0, restarts=1, seed=None):
     R = data.astype(np.float32) # float32
     cov_buf = struct.pack(byte_order + "II", n, p)
     cov_buf += R.tobytes()
-    # blob = boss_from_cov(cov_buf, knwl_buf, float(discount), int(restarts)) 
     thread = threading.Thread(target=worker_bfc, args=(cov_buf, knwl_buf, discount, restarts, seed, ret)) 
 
   elif isinstance(data, np.ndarray):
@@ -71,17 +78,20 @@ def boss(data, n=None, discount=1.0, restarts=1, seed=None):
     X = data.astype(np.float32).T # float32 transposed 
     data_buf = struct.pack(byte_order + "II", n, p)
     data_buf += X.tobytes()
-    # blob = boss_from_data(data_buf, knwl_buf, float(discount), int(restarts))
-    thread = threading.Thread(target=worker_bfd, args=(cov_buf, knwl_buf, discount, restarts, seed, ret)) 
+    thread = threading.Thread(target=worker_bfd, args=(data_buf, knwl_buf, discount, restarts, seed, ret)) 
 
   elif isinstance(data, pd.DataFrame):
-    print("boss from data")
-    n, p = data.shape
-    X = data.values.astype(np.float32).T # float32 transposed
-    data_buf = struct.pack(byte_order + "II", n, p)
-    data_buf += X.tobytes()
-    # blob = boss_from_data(data_buf, knwl_buf, float(discount), int(restarts))
-    thread = threading.Thread(target=worker_bfd, args=(cov_buf, knwl_buf, discount, restarts, seed, ret)) 
+    print("boss from cov")
+    R = data.corr().astype(np.float32).values # float32
+    cov_buf = struct.pack(byte_order + "II", n, p)
+    cov_buf += R.tobytes()
+    thread = threading.Thread(target=worker_bfc, args=(cov_buf, knwl_buf, discount, restarts, seed, ret)) 
+    # print("boss from data")
+    # n, p = data.shape
+    # X = data.astype(np.float32).values.T # float32 transposed
+    # data_buf = struct.pack(byte_order + "II", n, p)
+    # data_buf += X.tobytes()
+    # thread = threading.Thread(target=worker_bfd, args=(cov_buf, knwl_buf, discount, restarts, seed, ret)) 
 
   else:
     # replace with raise

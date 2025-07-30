@@ -17,7 +17,6 @@ typedef struct {
 
 Priority_Queue pq_alloc(size_t cap);
 void pq_free(Priority_Queue pq);
-
 void pq_push(Priority_Queue *pq, uint32_t idx, float val);
 PQ_Node pq_pop(Priority_Queue *pq);
 
@@ -36,12 +35,10 @@ Priority_Queue pq_alloc(size_t cap)
   return pq;
 }
 
-
 void pq_free(Priority_Queue pq)
 {
   free(pq.nodes);
 }
-
 
 void pq_push(Priority_Queue *pq, uint32_t idx, float val)
 {
@@ -60,7 +57,6 @@ void pq_push(Priority_Queue *pq, uint32_t idx, float val)
   pq->nodes[i].idx = idx;
   pq->nodes[i].val = val;
 }
-
 
 PQ_Node pq_pop(Priority_Queue *pq)
 {

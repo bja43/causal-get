@@ -18,6 +18,11 @@
 #include "pq.h"
 #endif // PQ_H_
 
+
+// check struct member order for alignment
+// move lengths outside of GSNode
+// I guess length refers to children but not sure how to do this
+
 typedef struct {
   float grow_score;
   float shrink_score;
@@ -34,6 +39,7 @@ typedef struct {
 
 void gst_init(GST *gst, uint32_t root_idx, BIC *bic);
 void gst_grow(GST *gst, GST_Node *node, Bit_Array skip, Priority_Queue *pq, BIC *bic);
+// this can change the position of the root in memory---maybe return the new position or soemthing?
 
 void gst_alloc_nodes(GST *gst, size_t size);
 void gst_node_init(GST_Node *node, uint32_t idx, float score);
