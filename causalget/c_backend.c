@@ -155,6 +155,8 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
 
 
   // RANDOM RESTARTS ARE BEING IGNORED!
+ 
+
 
   // MOVED HERE FROM THE BOSS CALL
   uint32_t *order = malloc(sizeof(uint32_t) * p);
