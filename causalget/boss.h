@@ -40,11 +40,13 @@ typedef struct {
 } Search_State;
 
 
+bool better_mutation(uint32_t *order, size_t p, uint32_t *ptr, GST *gsts, Bit_Array prefix, Bit_Array skip, Priority_Queue *pq, BIC *bic, float *scores);
 void shuffle(uint32_t *arr, size_t size);
+
+void boss_search_alt(BIC *bic, uint32_t *order, size_t p, GST *gsts, Bit_Array prefix, Bit_Array skip, Priority_Queue *pq, uint8_t *graph);
 
 void boss_search(BIC *bic, size_t restarts, uint8_t *graph);
 
-bool better_mutation(uint32_t *order, size_t p, uint32_t *ptr, GST *gsts, Bit_Array prefix, Bit_Array skip, Priority_Queue *pq, BIC *bic, float *scores);
 
 
 #endif // BOSS_H_
@@ -160,6 +162,74 @@ bool better_mutation(uint32_t *order, size_t p, uint32_t *ptr, GST *gsts, Bit_Ar
 // handle them outside
 // what about passing a graph in?
 
+
+void boss_search_alt(BIC *bic, uint32_t *order, size_t p, GST *gsts, Bit_Array prefix, Bit_Array skip, Priority_Queue *pq, uint8_t *graph)
+{
+
+  // there should be a search struct that contains these three things + a bic score
+  // these are the data requires to use a GST in search (again + a bic score)
+  // perhaps the array of floats for score should be initialized here as well?
+
+
+  uint32_t *itr = malloc(sizeof(uint32_t) * p);
+
+  // will need one per suborder
+  float *scores = malloc(sizeof(float) * p);
+  
+  uint32_t *ptr;
+
+
+  bool improved;
+
+
+  // printf("%zu\n", i);
+
+  // itr is a copy of the entire order so that we can iterate over the order while it is being modified
+  // we are iterating over the frozen copy
+  // itr only need to be a copy of the suborder 
+  do {
+    for (size_t i = 0; i < p; i++) itr[i] = order[i];
+
+    printf("better mutation...\n");
+
+    // this sets prefix to be empty, but it should include all members of prior suborders
+    // bta_reset(prefix); 
+
+    // fixes but maybe slow?
+    for(size_t i = 0; i < p; i++) bta_clear(prefix, order[i]);
+
+    improved = false;
+    for (size_t i = 0; i < p; i++) {
+      ptr = order;
+      while (*ptr != itr[i]) ptr++; // make sure ptr points at the (ith variable in the frozen order)'s location in order 
+      improved |= better_mutation(order, p, ptr, gsts, prefix, skip, pq, bic, scores);
+      // scores should be a pointer to the same offset as ptr (I think) so that things can run in parallel
+    }
+  } while(improved);
+  
+  free(scores);
+
+  free(itr);
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void boss_search(BIC *bic, size_t restarts, uint8_t *graph)
 {
   size_t p = bic->p;
@@ -172,9 +242,9 @@ void boss_search(BIC *bic, size_t restarts, uint8_t *graph)
   Bit_Array prefix = bta_alloc(p);
   Bit_Array skip = bta_alloc(p);
 
-  uint32_t* order = malloc(sizeof(uint32_t) * p);
-  uint32_t* best = malloc(sizeof(uint32_t) * p);
-  uint32_t* itr = malloc(sizeof(uint32_t) * p);
+  uint32_t *order = malloc(sizeof(uint32_t) * p);
+  uint32_t *best = malloc(sizeof(uint32_t) * p);
+  uint32_t *itr = malloc(sizeof(uint32_t) * p);
   for (size_t i = 0; i < p; i++) { // Maybe need to assign first shuffle?
     order[i] = i;
     best[i] = i;

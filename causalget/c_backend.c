@@ -5,15 +5,32 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
+#define BTA_IMPLEMENTATION
+#define PQ_IMPLEMENTATION
+#define BIC_IMPLEMENTATION
+#define GST_IMPLEMENTATION
 #define BOSS_IMPLEMENTATION
+
+#ifndef BTA_H_
+#include "bta.h"
+#endif // BTA_H_
+
+#ifndef PQ_H_
+#include "pq.h"
+#endif // PQ_H_
+
+#ifndef BIC_H_
+#include "bic.h"
+#endif // BIC_H_
+
+#ifndef GST_H_
+#include "gst.h"
+#endif // GST_H_
 
 #ifndef BOSS_H_
 #include "boss.h"
 #endif // BOSS_H_
 
-#ifndef BIC_H_
-#include "bic.h"
-#endif // BIC_H_
 
 // MOVE THIS SOMEWHERE ELSE
 typedef struct {
@@ -110,20 +127,98 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
     }
   }
 
+
+
   double *L = malloc(sizeof(double) * TNU(p));
   double *D = malloc(sizeof(double) * p);
   uint32_t *z = malloc(sizeof(uint32_t) * p);
+  BIC bic = { discount, cov, n, p, get_cov_precomp, L, D, 0, 0, z };
+
+  Bit_Array prefix = bta_alloc(p);
+  Bit_Array skip = bta_alloc(p);
+  Priority_Queue pq = pq_alloc(p);
+
+  GST *gsts = malloc(sizeof(GST) * p);
+  for (size_t i = 0; i < p; i++) gst_init(gsts + i, i, &bic);
+
 
   // TEMPORARY SOLUTION!
   uint8_t *tmp = malloc(sizeof(uint8_t) * p * p);
 
-  BIC bic = { discount, cov, n, p, get_cov_precomp, L, D, 0, 0, z };
+  // ZERO OUT THE GRAPH
+  for (size_t i = 0; i < p; i++) {
+    for (size_t j = 0; j < p; j++) {
+      tmp[i * p + j] = 0;
+    }
+  }
 
-  // ADD KNOWLEDGE TO THIS CALL!
-  Py_BEGIN_ALLOW_THREADS
-  boss_search(&bic, restarts, tmp);
-  Py_END_ALLOW_THREADS
 
+
+  // RANDOM RESTARTS ARE BEING IGNORED!
+
+  // MOVED HERE FROM THE BOSS CALL
+  uint32_t *order = malloc(sizeof(uint32_t) * p);
+
+  if (!knwl.num_groups) {
+    // NO KNOWLEDGE
+    for (size_t i = 0; i < p; i++) order[i] = i;
+    Py_BEGIN_ALLOW_THREADS
+    boss_search_alt(&bic, order, p, gsts, prefix, skip, &pq, tmp);
+    Py_END_ALLOW_THREADS
+  } else {
+    // KNOWLEDGE
+    // ASSUME GROUP PARTITION AND ARE IN ORDER
+    for (size_t i = 0; i < p; i++) order[i] = knwl.group_members[i];
+  
+    uint32_t *suborder = order;
+    for (size_t i = 0; i < knwl.num_groups; i++) {
+      size_t sub_p = knwl.group_sizes[i];
+
+      // THIS SHUFFLE SHOULD ONLY SHUFFLE WITHIN SUBORDERS
+      shuffle(suborder, sub_p);
+  
+      Py_BEGIN_ALLOW_THREADS
+      boss_search_alt(&bic, suborder, sub_p, gsts, prefix, skip, &pq, tmp);
+      Py_END_ALLOW_THREADS
+
+      // current suborder is added to prefix
+      for (size_t i = 0; i < sub_p; i++) bta_set(prefix, order[i]);
+
+      suborder += sub_p;
+    }
+  }
+
+
+  // WE SHOULD NOT HAVE TO RECALCULATE THE PARENTS
+  bta_reset(prefix);
+  for (size_t i = 0; i < p; i++) {
+    gst_trace(gsts + order[i], prefix, skip, &pq, &bic);
+    bic_shrink(&bic);
+    bta_set(prefix, order[i]);
+    for (size_t j = 0; j < bic.q; j++) {
+      tmp[order[i] * p + bic.z[j]] = 1;
+    }
+  }
+
+
+
+
+  // MOVED HERE FROM THE BOSS CALL
+  free(order);
+
+
+
+  // freeing GST
+  for (size_t i = 0; i < p; i++) gst_free(gsts + i);
+  free(gsts);
+
+  
+  bta_free(prefix); 
+  bta_free(skip);
+  pq_free(pq);
+
+
+  // freeing components of BIC
   free(L);
   free(D);
   free(z);
