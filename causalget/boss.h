@@ -41,6 +41,7 @@ typedef struct {
 
 
 bool better_mutation(uint32_t *order, size_t p, uint32_t *ptr, GST *gsts, Bit_Array prefix, Bit_Array skip, Priority_Queue *pq, BIC *bic, float *scores);
+
 void shuffle(uint32_t *arr, size_t size);
 
 void boss_search_alt(BIC *bic, uint32_t *order, size_t p, GST *gsts, Bit_Array prefix, Bit_Array skip, Priority_Queue *pq, uint8_t *graph);
@@ -157,53 +158,61 @@ bool better_mutation(uint32_t *order, size_t p, uint32_t *ptr, GST *gsts, Bit_Ar
 }
 
 
-// maybe an order should be passed in?
-// what about random restarts?
-// handle them outside
-// what about passing a graph in?
+
+
+
+
+
+
+// WHAT ABOUT RANDOM RESTARTS?
+// HANDLE THEM OUTSIDE
+// WHAT ABOUT PASSING A GRAPH IN?
+// CURRENTLY I AM PASSING ONE IN BUT IT IS NOT BEING USED
 
 
 void boss_search_alt(BIC *bic, uint32_t *order, size_t p, GST *gsts, Bit_Array prefix, Bit_Array skip, Priority_Queue *pq, uint8_t *graph)
 {
 
-  // there should be a search struct that contains these three things + a bic score
-  // these are the data requires to use a GST in search (again + a bic score)
-  // perhaps the array of floats for score should be initialized here as well?
+  // THERE SHOULD BE A SEARCH STRUCT THAT CONTAINS THESE THREE THINGS + A BIC SCORE
+  // THESE ARE THE DATA REQUIRES TO USE A GST IN SEARCH (AGAIN + A BIC SCORE)
+  // PERHAPS THE ARRAY OF FLOATS FOR SCORE SHOULD BE INITIALIZED HERE AS WELL?
 
 
+  // ITR IS A COPY OF THE ENTIRE ORDER SO THAT WE CAN ITERATE OVER THE ORDER WHILE IT IS BEING MODIFIED
+  // WE ARE ITERATING OVER THE FROZEN COPY
+  // ITR ONLY NEED TO BE A COPY OF THE SUBORDER 
   uint32_t *itr = malloc(sizeof(uint32_t) * p);
 
-  // will need one per suborder
+  // WILL NEED ONE PER SUBORDER
   float *scores = malloc(sizeof(float) * p);
   
+  // PTR POINTS AT THE (ITH VARIABLE IN THE FROZEN ORDER)'S LOCATION IN ORDER 
   uint32_t *ptr;
 
 
   bool improved;
 
-
-  // printf("%zu\n", i);
-
-  // itr is a copy of the entire order so that we can iterate over the order while it is being modified
-  // we are iterating over the frozen copy
-  // itr only need to be a copy of the suborder 
   do {
+    // ITR IS A COPY OF THE ENTIRE ORDER SO THAT WE CAN ITERATE OVER THE ORDER WHILE IT IS BEING MODIFIED
+    // WE ARE ITERATING OVER THE FROZEN COPY
+    // ITR ONLY NEED TO BE A COPY OF THE SUBORDER 
     for (size_t i = 0; i < p; i++) itr[i] = order[i];
 
+    // verbose output: new bm loop begins
     printf("better mutation...\n");
 
-    // this sets prefix to be empty, but it should include all members of prior suborders
+    // THIS SETS PREFIX TO BE EMPTY, BUT IT SHOULD INCLUDE ALL MEMBERS OF PRIOR SUBORDERS
     // bta_reset(prefix); 
 
-    // fixes but maybe slow?
-    for(size_t i = 0; i < p; i++) bta_clear(prefix, order[i]);
+    // FIXES BUT MAYBE SLOW?
+    // IS THERE A BETTER WAY TO DO THIS?
+    for (size_t i = 0; i < p; i++) bta_clear(prefix, order[i]);
 
     improved = false;
     for (size_t i = 0; i < p; i++) {
-      ptr = order;
-      while (*ptr != itr[i]) ptr++; // make sure ptr points at the (ith variable in the frozen order)'s location in order 
+      ptr = order; // SET PTR TO FIRST POSITION IN ORDER
+      while (*ptr != itr[i]) ptr++; // MAKE SURE PTR POINTS AT THE (ITH VARIABLE IN THE FROZEN ORDER)'S LOCATION IN ORDER (BASICALLY GET POS)
       improved |= better_mutation(order, p, ptr, gsts, prefix, skip, pq, bic, scores);
-      // scores should be a pointer to the same offset as ptr (I think) so that things can run in parallel
     }
   } while(improved);
   
@@ -315,15 +324,16 @@ void boss_search(BIC *bic, size_t restarts, uint8_t *graph)
   }
 
   // WE SHOULD NOT HAVE TO RECALCULATE THE PARENTS
-  bta_reset(prefix);
-  for (size_t i = 0; i < p; i++) {
-    gst_trace(gsts + best[i], prefix, skip, &pq, bic);
-    bic_shrink(bic);
-    bta_set(prefix, best[i]);
-    for (size_t j = 0; j < bic->q; j++) {
-      graph[best[i] * p + bic->z[j]] = 1;
-    }
-  }
+  // (commented out because its calculated outside)
+  // bta_reset(prefix);
+  // for (size_t i = 0; i < p; i++) {
+  //   gst_trace(gsts + best[i], prefix, skip, &pq, bic);
+  //   bic_shrink(bic);
+  //   bta_set(prefix, best[i]);
+  //   for (size_t j = 0; j < bic->q; j++) {
+  //     graph[best[i] * p + bic->z[j]] = 1;
+  //   }
+  // }
 
   free(scores);
 

@@ -24,21 +24,24 @@ compiler flags:
   -O3
 
 
+mostly complete:
+
+  refactor python with (un)/pack cov/data/knowledge functions
+
+  suborder refactor
+  incorporate knowledge
+
+
 todo:
 
   check if we are leaking memory
   set up valgrind test
 
-  refactor python with (un)/pack cov/data/knowledge functions
-
   check struct member order for alignment
 
-  suborder refactor
   score refactor
-  group varibles refactor
-  knowledge refactor
+  group varibles refactor (dg score)
 
-  incorporate knowledge
   incorporate graph representation
 
   implement sp

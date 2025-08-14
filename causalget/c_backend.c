@@ -10,6 +10,7 @@
 #define BIC_IMPLEMENTATION
 #define GST_IMPLEMENTATION
 #define BOSS_IMPLEMENTATION
+#define SP_IMPLEMENTATION
 
 #ifndef BTA_H_
 #include "bta.h"
@@ -30,6 +31,10 @@
 #ifndef BOSS_H_
 #include "boss.h"
 #endif // BOSS_H_
+
+#ifndef SP_H_
+#include "sp.h"
+#endif // SP_H_
 
 
 // MOVE THIS SOMEWHERE ELSE
@@ -106,29 +111,29 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
   itr = knwl_view.buf;
   Knowledge knwl = {0};
   parse_knowledge(&knwl, itr);
-  EdgeList knwl_graph = knwl.forbidden;
 
   // print the knwl groups
-  size_t offset = 0;
-  for (size_t i = 0; i < knwl.num_groups; i++) {
-    printf("Group %zu:", i);
-    for (size_t j = 0; j < knwl.group_sizes[i]; j++)
-      printf(" %u", knwl.group_members[offset + j]);
-    offset += knwl.group_sizes[i];
-    printf("\n");
-  }
+  // EdgeList knwl_graph = knwl.forbidden;
+  // size_t offset = 0;
+  // for (size_t i = 0; i < knwl.num_groups; i++) {
+  //   printf("Group %zu:", i);
+  //   for (size_t j = 0; j < knwl.group_sizes[i]; j++)
+  //     printf(" %u", knwl.group_members[offset + j]);
+  //   offset += knwl.group_sizes[i];
+  //   printf("\n");
+  // }
 
   // print forbidden knwl knwl_graph (on groups)
-  for (size_t i = 0; i < knwl_graph.num_edges; i++) {
-    if (knwl_graph.edges[i].edge) {
-      printf("%zu. %u <-- %u\n", i, knwl_graph.edges[i].i, knwl_graph.edges[i].j);
-    } else if (knwl_graph.edges[i].edge == 2) {
-      printf("%zu. %u --> %u\n", i, knwl_graph.edges[i].i, knwl_graph.edges[i].j);
-    }
-  }
+  // for (size_t i = 0; i < knwl_graph.num_edges; i++) {
+  //   if (knwl_graph.edges[i].edge) {
+  //     printf("%zu. %u <-- %u\n", i, knwl_graph.edges[i].i, knwl_graph.edges[i].j);
+  //   } else if (knwl_graph.edges[i].edge == 2) {
+  //     printf("%zu. %u --> %u\n", i, knwl_graph.edges[i].i, knwl_graph.edges[i].j);
+  //   }
+  // }
 
 
-
+  // MAKE BIC INIT / ALLOC AND FREE FUNCTIONS?
   double *L = malloc(sizeof(double) * TNU(p));
   double *D = malloc(sizeof(double) * p);
   uint32_t *z = malloc(sizeof(uint32_t) * p);
@@ -141,11 +146,18 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
   GST *gsts = malloc(sizeof(GST) * p);
   for (size_t i = 0; i < p; i++) gst_init(gsts + i, i, &bic);
 
+  // MOVED HERE FROM THE BOSS CALL
+  uint32_t *order = malloc(sizeof(uint32_t) * p);
+
+
+
+
+
 
   // TEMPORARY SOLUTION!
   uint8_t *tmp = malloc(sizeof(uint8_t) * p * p);
 
-  // ZERO OUT THE GRAPH
+  // STILL TEMP --- ZERO OUT THE GRAPH
   for (size_t i = 0; i < p; i++) {
     for (size_t j = 0; j < p; j++) {
       tmp[i * p + j] = 0;
@@ -154,33 +166,35 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
 
 
 
+
+
+
   // RANDOM RESTARTS ARE BEING IGNORED!
  
 
-
-  // MOVED HERE FROM THE BOSS CALL
-  uint32_t *order = malloc(sizeof(uint32_t) * p);
+  // graphs are being passed and calculated in boss/sp
+  // but not used in this function?
 
   if (!knwl.num_groups) {
-    // NO KNOWLEDGE
+    printf("HERHEHREHRHEHREHRHE\n");    
+    // IF NO KNOWLEDGE
     for (size_t i = 0; i < p; i++) order[i] = i;
+    shuffle(order, p);
     Py_BEGIN_ALLOW_THREADS
-    boss_search_alt(&bic, order, p, gsts, prefix, skip, &pq, tmp);
+    // boss_search_alt(&bic, order, p, gsts, prefix, skip, &pq, tmp);
+    sp_search(&bic, order, p, gsts, prefix, skip, &pq, tmp);
     Py_END_ALLOW_THREADS
   } else {
-    // KNOWLEDGE
+    // IF KNOWLEDGE
     // ASSUME GROUP PARTITION AND ARE IN ORDER
     for (size_t i = 0; i < p; i++) order[i] = knwl.group_members[i];
-  
     uint32_t *suborder = order;
     for (size_t i = 0; i < knwl.num_groups; i++) {
       size_t sub_p = knwl.group_sizes[i];
-
-      // THIS SHUFFLE SHOULD ONLY SHUFFLE WITHIN SUBORDERS
       shuffle(suborder, sub_p);
-  
       Py_BEGIN_ALLOW_THREADS
-      boss_search_alt(&bic, suborder, sub_p, gsts, prefix, skip, &pq, tmp);
+      // boss_search_alt(&bic, suborder, sub_p, gsts, prefix, skip, &pq, tmp);
+      sp_search(&bic, suborder, sub_p, gsts, prefix, skip, &pq, tmp);
       Py_END_ALLOW_THREADS
 
       // current suborder is added to prefix
@@ -190,6 +204,9 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
     }
   }
 
+  printf("\n\n\n");
+  for (size_t i = 0; i <p; i++) printf(" %u", order[i]);
+  printf("\n\n\n");
 
   // WE SHOULD NOT HAVE TO RECALCULATE THE PARENTS
   bta_reset(prefix);
@@ -247,6 +264,14 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
 
   return edges;
 }
+
+
+
+
+
+
+
+
 
 
 static PyObject *boss_from_data(PyObject *self, PyObject *args, PyObject *kw)

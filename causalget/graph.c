@@ -111,13 +111,13 @@ void add_sibling(Graph *g, uint32_t i, uint32_t j)
 
 void remove_parent(Graph *g, uint32_t i, uint32_t j)
 {
-  for (size_t k = 0; k < g.v[i].ch_size; k++) {
-    if (g.v[i].pa[k] == j) {
+  for (size_t k = 0; k < g->v[i].ch_size; k++) {
+    if (g->v[i].pa[k] == j) {
       
       // shift everything left
-      while (k < )
-        g->e[k] = g->e[k + 1];
-      }
+      // while (k < )
+      //   g->e[k] = g->e[k + 1];
+      // }
       g->e_size--;
 
       break;
@@ -157,10 +157,10 @@ int main(void) {
     // g.v[i].ch = g.e + g.e_size;
     // g.v[i].ne = g.e + g.e_size;
     // g.v[i].sib = g.e + g.e_size;
-    g.v[i].pa = g.e
-    g.v[i].ch = g.e
-    g.v[i].ne = g.e
-    g.v[i].sib = g.e
+    g.v[i].pa = g.e;
+    g.v[i].ch = g.e;
+    g.v[i].ne = g.e;
+    g.v[i].sib = g.e;
   }
 
   // add edges

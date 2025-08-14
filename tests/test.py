@@ -98,15 +98,19 @@ def run_sim(n, p, ad, sf):
     score.setPenaltyDiscount(2)
     score.setStructurePrior(0)
 
-    search = ts.Boss(score)
-    search.setUseBes(False)
-    search.setNumStarts(1)
-    search.setNumThreads(1)
-    search.setUseDataOrder(False)
-    search.setResetAfterBM(False)
-    search.setResetAfterRS(False)
-    search.setVerbose(False)
+    # search = ts.Boss(score)
+    # search.setUseBes(False)
+    # search.setNumStarts(1)
+    # search.setNumThreads(1)
+    # search.setUseDataOrder(False)
+    # search.setResetAfterBM(False)
+    # search.setResetAfterRS(False)
+    # search.setVerbose(False)
+    
+    search = ts.Sp(score)
+    
     search = ts.PermutationSearch(search)
+
     graphs.append(search.search())
     times.append(timer())
 
@@ -119,8 +123,11 @@ def run_sim(n, p, ad, sf):
 
     dag = np.zeros([p, p], dtype=np.uint8)
     for i, j, e in edges:
+      print(i, j, e)
       if e == 2: dag[i, j] = 1
       if e == 1: dag[j, i] = 1
+
+    print(dag)
 
     graphs.append(construct_graph(dag, nodes))
     times.append(timer())
@@ -143,12 +150,12 @@ def run_sim(n, p, ad, sf):
   return (tg.GraphUtils.replaceNodes(cpdag, nodes), data, [(alg, tg.GraphUtils.replaceNodes(graphs[i], nodes), times[i + 1] - times[i]) for i, alg in enumerate(algs)])
 
 
-reps = 10
+reps = 1
 
 unique_sims = [(n, p, ad, sf)
                for n in [1000]
-               for p in [100]
-               for ad in [10]
+               for p in [10]
+               for ad in [2]
                for sf in [(1, 0)]]
 
 
