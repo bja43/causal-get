@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <assert.h>
 
 typedef struct {
@@ -30,7 +31,7 @@ Order ord_copy(Order ord)
 {
   Order copy = {
     .p = ord.p,
-    .v = malloc(sizeof(uint32_t) * p),
+    .v = malloc(sizeof(uint32_t) * ord.p),
   };
 
   for (size_t i = 0; i < ord.p; i++) {
@@ -53,14 +54,35 @@ void ord_print(Order ord)
   printf("\n");
 }
 
+void ord_shuffle(Order ord)
+{
+  if (ord.p < 2) return;
+  
+  for (size_t i = ord.p - 1; i > 0; i--) {
+    size_t j = rand() % (i + 1);
+    uint32_t tmp = ord.v[i];
+    ord.v[i] = ord.v[j];
+    ord.v[j] = tmp;
+  }
+}
+
 
 int main()
 {
+  srand(time(NULL));
+
   size_t p = 4;
   Order ord = ord_alloc(p);
 
   ord_print(ord);
+  Order copy = ord_copy(ord);
+
+  ord_shuffle(ord);
+
+  ord_print(ord);
+  ord_print(copy);
 
   ord_free(ord);
+  ord_free(copy);
   return 0;
 }
