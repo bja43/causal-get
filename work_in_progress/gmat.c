@@ -3,8 +3,15 @@
 #include <stdbool.h>
 #include <assert.h>
 
+// typedef struct {
+//   size_t p;
+//   uint8_t *di;
+//   uint8_t *un;
+// } Graph_Matrix;
+
 typedef struct {
   size_t p;
+  uint8_t *bits;
   uint8_t *di;
   uint8_t *un;
 } Graph_Matrix;
@@ -38,11 +45,18 @@ Graph_Matrix gmat_alloc(size_t p)
 {
   size_t size = (p * p + 7u) >> 3;
 
-  Graph_Matrix gmat = {
-    .p = p,
-    .di = malloc(sizeof(uint8_t) * size),
-    .un = malloc(sizeof(uint8_t) * size),
-  };
+  // use this trick elsewhere
+  Graph_Matrix gmat;
+  gmat.p = p;
+  // gmat.di = malloc(sizeof(*gmat.di) * size);
+  // gmat.un = malloc(sizeof(*gmat.un) * size);
+  // assert(gmat.di != NULL);
+  // assert(gmat.un != NULL);
+  gmat.bits = malloc(sizeof(*gmat.bits) * 2 * size);
+  assert(gmat.bits != NULL);
+  gmat.di = gmat.bits;
+  gmat.un = gmat.bits + size;
+  
 
   for (size_t i = 0; i < size; i++) {
     gmat.di[i] = 0;
@@ -56,11 +70,16 @@ Graph_Matrix gmat_copy(Graph_Matrix gmat)
 {
   size_t size = (gmat.p * gmat.p + 7u) >> 3;
 
-  Graph_Matrix copy = {
-    .p = gmat.p,
-    .di = malloc(sizeof(uint8_t) * size),
-    .un = malloc(sizeof(uint8_t) * size),
-  };
+  Graph_Matrix copy;
+  copy.p = gmat.p,
+  // copy.di = malloc(sizeof(*copy.di) * size),
+  // copy.un = malloc(sizeof(*copy.un) * size),
+  // assert(copy.di != NULL);
+  // assert(copy.un != NULL);
+  copy.bits = malloc(sizeof(*gmat.bits) * 2 * size);
+  assert(copy.bits != NULL);
+  copy.di = copy.bits;
+  copy.un = copy.bits + size;
 
   for (size_t i = 0; i < size; i++) {
     copy.di[i] = gmat.di[i];
@@ -72,8 +91,9 @@ Graph_Matrix gmat_copy(Graph_Matrix gmat)
 
 void gmat_free(Graph_Matrix gmat)
 {
-  free(gmat.di);
-  free(gmat.un);
+  // free(gmat.di);
+  // free(gmat.un);
+  free(gmat.bits);
 }
 
 void gmat_add_di(Graph_Matrix gmat, size_t i, size_t j)
