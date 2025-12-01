@@ -1,7 +1,7 @@
 from the test directory:
 
-causal-get % cd ..;python -m build;pip install dist/*.whl --force-reinstall;cd tests;python quick_test.py
-causal-get % cd ..;python -m build;pip install dist/*.whl --force-reinstall;cd tests;python idea.py
+cd ..;python -m build;pip install dist/*.whl --force-reinstall;cd tests;python quick_test.py
+cd ..;python -m build;pip install dist/*.whl --force-reinstall;cd tests;python idea.py
 
 
 https://github.com/tinycthread/tinycthread
@@ -43,6 +43,20 @@ todo:
   group varibles refactor (dg score)
 
   incorporate graph representation
+  implement dag -> cpdag
+    consider a bunch of other graph untility function
+    implement RICF
+    implement D/MaO mehtods
 
-  implement sp
-  implement grasp
+  implement sp -- mostly done
+  implement grasp - need graph representation
+  implement a* search on permutations?
+  implement bes
+    consider adding branch and bound bes
+
+  imeplement delve
+    this introduces set representations
+    need set -> graph functions
+      not too bad for ugs and dags
+
+  NOTE: lvBES and set -> mag will have many similar issues to solve

@@ -18,11 +18,6 @@
 #include "pq.h"
 #endif // PQ_H_
 
-
-// check struct member order for alignment
-// move lengths outside of GSNode
-// I guess length refers to children but not sure how to do this
-
 typedef struct {
   float grow_score;
   float shrink_score;
@@ -39,7 +34,8 @@ typedef struct {
 
 void gst_init(GST *gst, uint32_t root_idx, BIC *bic);
 void gst_grow(GST *gst, GST_Node *node, Bit_Array skip, Priority_Queue *pq, BIC *bic);
-// this can change the position of the root in memory---maybe return the new position or soemthing?
+// this can change the position of the root in memory---maybe return the new position or something?
+// gst_grow calls gst_alloc_nodes which is where this happend. The pointer in the struct is updated.
 
 void gst_alloc_nodes(GST *gst, size_t size);
 void gst_node_init(GST_Node *node, uint32_t idx, float score);
@@ -63,7 +59,6 @@ void gst_init(GST *gst, uint32_t idx, BIC *bic)
   gst_node_init(gst->root, idx, bic_score(bic));
 }
 
-
 void gst_alloc_nodes(GST *gst, size_t size)
 {
   if (gst->cap == 0) {
@@ -79,7 +74,6 @@ void gst_alloc_nodes(GST *gst, size_t size)
   }
 }
 
-
 void gst_free(GST *gst)
 {
   gst->size = 0;
@@ -87,7 +81,7 @@ void gst_free(GST *gst)
   free(gst->root);
 }
 
-
+// This can probably be done inline
 void gst_node_init(GST_Node *node, uint32_t idx, float score)
 {
   node->grow_score = score;
@@ -96,7 +90,6 @@ void gst_node_init(GST_Node *node, uint32_t idx, float score)
   node->children = 0;
   node->offset = 0;
 }
-
 
 void gst_grow(GST *gst, GST_Node *node, Bit_Array skip, Priority_Queue *pq, BIC *bic)
 {
@@ -127,7 +120,6 @@ void gst_grow(GST *gst, GST_Node *node, Bit_Array skip, Priority_Queue *pq, BIC 
   }
 }
 
-
 float gst_trace(GST *gst, Bit_Array prefix, Bit_Array skip, Priority_Queue *pq, BIC *bic)
 {
   // WHY IS THIS BEING RESET HERE INSTEAD OF OUTSIDE?
@@ -142,7 +134,6 @@ float gst_trace(GST *gst, Bit_Array prefix, Bit_Array skip, Priority_Queue *pq, 
 
   return gst_next_node(gst, 0, prefix, skip, pq, bic);
 }
-
 
 float gst_next_node(GST *gst, size_t offset, Bit_Array prefix, Bit_Array skip, Priority_Queue *pq, BIC *bic)
 {

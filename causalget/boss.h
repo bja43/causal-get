@@ -28,6 +28,7 @@
 
 
 // should order and score be included in the search state?
+// need a cleanup function
 typedef struct {
   Bit_Array prefix; // maybe make this a pointer to be consistent
   Bit_Array skip; // maybe make this a pointer to be consistent

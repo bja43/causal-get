@@ -45,18 +45,31 @@ typedef struct {
 } Edge;
 
 // MOVE THIS SOMEWHERE ELSE
+// change num_edges to size_t?
 typedef struct {
   uint32_t num_edges;
   Edge *edges;
 } EdgeList;
 
 // MOVE THIS SOMEWHERE ELSE
+// change num_groups to size_t?
 typedef struct {
   uint32_t num_groups;
   uint32_t *group_sizes;
   uint32_t *group_members;
   EdgeList forbidden;
 } Knowledge;
+
+
+// SOMETHING LIKE THIS?
+typedef struct {
+  int varg1;
+  int varg2;
+  int varg3;
+} Opt;
+int ex_func_(int arg, Opt opt)
+#define ex_func(arg, ...) ex_func_(arg, (Opt) { __VA_ARGS__ })
+
 
 
 
@@ -179,7 +192,7 @@ static PyObject *boss_from_cov(PyObject *self, PyObject *args, PyObject *kw)
     printf("HERHEHREHRHEHREHRHE\n");    
     // IF NO KNOWLEDGE
     for (size_t i = 0; i < p; i++) order[i] = i;
-    shuffle(order, p);
+    // shuffle(order, p);
     Py_BEGIN_ALLOW_THREADS
     // boss_search_alt(&bic, order, p, gsts, prefix, skip, &pq, tmp);
     sp_search(&bic, order, p, gsts, prefix, skip, &pq, tmp);

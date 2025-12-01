@@ -9,6 +9,13 @@
 #define CAP 1000
 
 
+// I am considering three different types of graphs:
+//    1. linked vertices
+//    2. list of vertices and edges
+//    3. matrix representation (have a matrix for each edge-type (can use bits)
+
+
+
 typedef struct Vertex{
   size_t pa_size;
   size_t ch_size;
@@ -21,6 +28,8 @@ typedef struct Vertex{
 } Vertex;
 
 
+// Do we need cap for vertices?
+// might as well keep it for now.
 typedef struct {
   size_t v_size;
   size_t v_cap;
@@ -30,6 +39,11 @@ typedef struct {
   uint32_t *e;
 } Graph;
 
+
+// I need detailed note on how the graph is packed into memory.
+// perhaps make a figure in latex.
+
+// there should be versions of these operation that do multiple additions at once
 
 void add_parent(Graph *g, uint32_t i, uint32_t j)
 {

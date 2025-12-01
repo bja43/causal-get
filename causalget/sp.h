@@ -203,6 +203,12 @@ static inline void swap_int(int *a, int *b) {
     *b = tmp;
 }
 
+
+// performance seems a bit less than expected...
+// perhaps something is wrong?
+// probably the starting permutation... 
+// figure out what to do about the score improvement if condition (+1e-6)
+
 void sp_search(BIC *bic, uint32_t *order, size_t p, GST *gsts, Bit_Array prefix, Bit_Array skip, Priority_Queue *pq, uint8_t *graph)
 {
   uint32_t *perm = malloc(sizeof(uint32_t) * p);
@@ -271,7 +277,7 @@ void sp_search(BIC *bic, uint32_t *order, size_t p, GST *gsts, Bit_Array prefix,
     for (size_t i = 0; i < p; i++) score += scores[i];
 
     // if better score then update
-    if (score > best + 1e-3) {
+    if (score > best + 1e-6) {
       for (size_t i = 0; i < p; i++) order[i] = perm[i];
       best = score;
     }

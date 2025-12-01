@@ -12,6 +12,7 @@ typedef struct {
 
 // NEED A FUNCTION TO RESET A SUBORDER (MAYBE)
 // start at position i and reset the next k
+// this would be easier for an array of uint8s (maybe)
 
 Bit_Array bta_alloc(size_t num_bits);
 void bta_free(Bit_Array bta);
@@ -48,19 +49,19 @@ void bta_reset(Bit_Array bta)
 
 void bta_set(Bit_Array bta, size_t idx)
 {
-  assert((idx + 7u) >> 3 < bta.size);
+  assert((idx + 7u) >> 3 <= bta.size);
   bta.bits[idx >> 3] |= (1u << (idx & 7u));
 }
 
 void bta_clear(Bit_Array bta, size_t idx)
 {
-  assert((idx + 7u) >> 3 < bta.size);
+  assert((idx + 7u) >> 3 <= bta.size);
   bta.bits[idx >> 3] &= ~(1u << (idx & 7u));
 }
 
 bool bta_check(Bit_Array bta, size_t idx)
 {
-  assert((idx + 7u) >> 3 < bta.size);
+  assert((idx + 7u) >> 3 <= bta.size);
   return bta.bits[idx >> 3] & (1u << (idx & 7u));
 }
 
