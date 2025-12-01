@@ -10,6 +10,7 @@ typedef struct {
 } Graph_Matrix;
 
 Graph_Matrix gmat_alloc(size_t p);
+Graph_Matrix gmat_copy(Graph_Matrix gmat);
 void gmat_free(Graph_Matrix gmat);
 
 void gmat_add_di(Graph_Matrix gmat, size_t i, size_t j);
@@ -49,6 +50,24 @@ Graph_Matrix gmat_alloc(size_t p)
   }
 
   return gmat;
+}
+
+Graph_Matrix gmat_copy(Graph_Matrix gmat)
+{
+  size_t size = (gmat.p * gmat.p + 7u) >> 3;
+
+  Graph_Matrix copy = {
+    .p = gmat.p,
+    .di = malloc(sizeof(uint8_t) * size),
+    .un = malloc(sizeof(uint8_t) * size),
+  };
+
+  for (size_t i = 0; i < size; i++) {
+    copy.di[i] = gmat.di[i];
+    copy.un[i] = gmat.un[i];
+  }
+
+  return copy;
 }
 
 void gmat_free(Graph_Matrix gmat)
@@ -143,7 +162,16 @@ int main()
   gmat_print_di(g);
   printf("\n");
   gmat_print_un(g);
+  printf("\n");
+
+  Graph_Matrix h = gmat_copy(g);
+
+  gmat_print_di(h);
+  printf("\n");
+  gmat_print_un(h);
+  printf("\n");
 
   gmat_free(g);
+  gmat_free(h);
   return 0;
 }
