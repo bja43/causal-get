@@ -3,6 +3,12 @@
 #include <stdbool.h>
 #include <assert.h>
 
+#define ORD_IMPLEMENTAION
+
+#ifndef ORD_H_
+#include "ord.h"
+#endif // ORD_H_
+
 // typedef struct {
 //   size_t p;
 //   uint8_t *di;
@@ -34,11 +40,54 @@ void gmat_print_di(Graph_Matrix gmat);
 void gmat_print_un(Graph_Matrix gmat);
 
 
-// add function for getting a consistent order
+
+void gmat_consistent_order(Graph_Matrix gmat, Order ord);
+bool is_source(Graph_Matrix gmat, Order ord, size_t i);
+
+
 
 // add function to dag to cpdag
 
 // add ancester and decendant functions
+// Start from the child and add paremts recursively
+// this approach can be used to get all ancestors
+// or to simply check if if another vertex is a parent
+
+
+#ifndef ORD_H_
+#include "ord.h"
+#endif // ORD_H_
+
+
+
+bool is_source(Graph_Matrix gmat, Order ord, size_t i)
+{
+  for (size_t j = 0; j < gmat.p; j++) {
+    if (i == j) continue;
+    if (ord_contains(ord, j)) continue;
+    if (gmat_is_di(gmat, i, j)) return false;
+  }
+  return true;
+}
+
+void gmat_consistent_order(Graph_Matrix gmat, Order ord)
+{
+  assert(gmat.p == ord.p);
+  ord.p = 0;
+  bool acyclic;
+  while (ord.p < gmat.p) {
+    acyclic = false;
+    for (size_t i = 0; i < gmat.p; i++) {
+      if (ord_contains(ord, i)) continue;
+      if (is_source(gmat, ord, i)) {
+        ord.v[ord.p++] = i;
+        acyclic = true;
+      }
+    }
+    assert(acyclic);
+  }
+}
+
 
 
 Graph_Matrix gmat_alloc(size_t p)
@@ -154,7 +203,7 @@ void gmat_print_di(Graph_Matrix gmat)
 {
   for (size_t i = 0; i < gmat.p; i++) {
     for (size_t j = 0; j < gmat.p; j++) {
-      printf(" %d", gmat_is_di(gmat, j, i));
+      printf(" %d", gmat_is_di(gmat, i, j));
     }
     printf("\n");
   }
@@ -164,7 +213,7 @@ void gmat_print_un(Graph_Matrix gmat)
 {
   for (size_t i = 0; i < gmat.p; i++) {
     for (size_t j = 0; j < gmat.p; j++) {
-      printf(" %d", gmat_is_un(gmat, j, i));
+      printf(" %d", gmat_is_un(gmat, i, j));
     }
     printf("\n");
   }
@@ -176,8 +225,9 @@ int main()
   size_t p = 4;
   Graph_Matrix g = gmat_alloc(p);
 
-  gmat_add_di(g, 1, 2);
   gmat_add_di(g, 2, 3);
+  gmat_add_di(g, 1, 2);
+  gmat_add_di(g, 0, 1);
 
   gmat_print_di(g);
   printf("\n");
@@ -191,7 +241,13 @@ int main()
   gmat_print_un(h);
   printf("\n");
 
+  Order ord = ord_alloc(p);
+  gmat_consistent_order(g, ord);
+  ord_print(ord);
+
   gmat_free(g);
   gmat_free(h);
+  ord_free(ord);
+
   return 0;
 }
